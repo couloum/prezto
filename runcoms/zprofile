@@ -2,6 +2,7 @@
 # Executes commands at login pre-zshrc.
 #
 # Authors:
+#   Florian Coulmier <florian@coulmier.fr>
 #   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
@@ -17,8 +18,8 @@ fi
 # Editors
 #
 
-export EDITOR='nano'
-export VISUAL='nano'
+export EDITOR='vim'
+export VISUAL='vim'
 export PAGER='less'
 
 #
