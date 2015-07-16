@@ -11,3 +11,16 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
 fi
 
 # Customize to your needs...
+
+
+alias ...='sudo -s'
+
+# Begin of line
+bindkey '^[[1~'	beginning-of-line
+bindkey '^[OH'	beginning-of-line
+bindkey '^A'	beginning-of-line
+
+# End of line
+bindkey '^[[4~'	end-of-line
+bindkey '^[OF'	end-of-line
+bindkey '^E'	end-of-line

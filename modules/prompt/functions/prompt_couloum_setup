@@ -33,16 +33,22 @@ function prompt_couloum_setup {
 
   # Set git-info parameters.
   zstyle ':prezto:module:git:info' verbose 'yes'
-  zstyle ':prezto:module:git:info:branch' format "${_prompt_couloum_colors[1]}%b%f"
-  zstyle ':prezto:module:git:info:added' format "${_prompt_couloum_colors[5]}●%f"
-  zstyle ':prezto:module:git:info:deleted' format "${_prompt_couloum_colors[2]}●%f"
-  zstyle ':prezto:module:git:info:modified' format "${_prompt_couloum_colors[4]}●%f"
-  zstyle ':prezto:module:git:info:untracked' format "${_prompt_couloum_colors[3]}●%f"
-  zstyle ':prezto:module:git:info:keys' format 'prompt' '(%b%d%a%m%u)'
+  zstyle ':prezto:module:git:info:branch' format "%F{cyan}%b%f"
+  zstyle ':prezto:module:git:info:added' format "%F{green}+%f"
+  zstyle ':prezto:module:git:info:deleted' format "%F{yellow}⨉%f"
+  zstyle ':prezto:module:git:info:modified' format "%F{red}?%f"
+  zstyle ':prezto:module:git:info:untracked' format "%F{magenta}●%f"
+  zstyle ':prezto:module:git:info:keys' format 'prompt' '%f(%b%d%a%m%u) '
+
+  # Set editor parameters
+  zstyle ':prezto:module:editor:info:keymap:primary' format '%F{green}>%f'
+  zstyle ':prezto:module:editor:info:keymap:alternate' format '%F{red}>%f'
 
   # Define prompts.
-  PROMPT="%F{blue}<%F{cyan}%T%F{blue}>[%F{$HOSTNAMECOLOR}%m%F{blue}:%F{yellow}%4~%F{blue}]"'${git_info:+${(e)git_info[prompt]}}'"%F{white}%# "
+  #PROMPT="%F{blue}<%F{cyan}%T%F{blue}>[%F{$HOSTNAMECOLOR}%m%F{blue}:%F{yellow}%4~%F{blue}]"'${git_info:+${(e)git_info[prompt]}}''${editor_info[keymap]}'"%f%# "
+  PROMPT="%F{$HOSTNAMECOLOR}%m%F{blue}"'${editor_info[keymap]}'"%F{yellow}%3~%f%# "
   #RPROMPT='%F{blue}${ruby_info[version]}'
+  RPROMPT="%(?..%F{red}»%? %f)"'${git_info:+${(e)git_info[prompt]}}'"%F{blue}[%F{cyan}%T%F{blue}]"
 }
 
 prompt_couloum_setup "$@"
