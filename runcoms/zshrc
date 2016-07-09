@@ -104,3 +104,5 @@ else
   _arguments -s -A "-*" $args '*:files:_files'
 fi
 }
+
+[ -f ~/.zshrc.local ] && . ~/.zshrc.local
