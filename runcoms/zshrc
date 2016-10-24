@@ -25,6 +25,15 @@ bindkey '^[[4~'	end-of-line
 bindkey '^[OF'	end-of-line
 bindkey '^E'	end-of-line
 
+# Bind ctrl+r to history search
+bindkey '^R' history-incremental-search-backward
+bindkey "^[OB" down-line-or-search
+bindkey "^[[B" down-line-or-search
+bindkey "^[OA" up-line-or-search
+bindkey "^[[A" up-line-or-search
+
+
+
 # Set windows title in tmux sessions
 # Just use server name
 zstyle ':prezto:module:terminal:tab-title' format '%m'
