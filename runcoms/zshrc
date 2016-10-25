@@ -14,6 +14,7 @@ fi
 
 
 alias ...='sudo -s'
+alias @@='sudo -s'
 
 # Begin of line
 bindkey '^[[1~'	beginning-of-line
