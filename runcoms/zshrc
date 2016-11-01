@@ -40,6 +40,11 @@ bindkey "^[[A" up-line-or-search
 zstyle ':prezto:module:terminal:tab-title' format '%m'
 zstyle ':prezto:module:terminal:window-title' format '%m'
 
+# Set custom dircolors, except on Mac OS
+if which dircolors > /dev/null 2>&1 && test -f ~/.dircolors.custom;  then
+  eval $(dircolors ~/.dircolors.custom)
+fi
+
 # Trick for du on MAC OS X
 _du() {
 if _pick_variant gnu=Free\ Soft unix --version /dummy/no-such-file; then
