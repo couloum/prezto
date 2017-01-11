@@ -125,4 +125,80 @@ else
 fi
 }
 
+
+start_tmux() {
+	TMUX_SOCK_PATH=/tmp/tmux-$(id -u)/default
+	if [ -S $TMUX_SOCK_PATH ]; then
+					TMUX_SOCK="-S $TMUX_SOCK_PATH"
+	fi
+
+	# Start tmux if not already in a tmux/screen session
+	if [ "$TERM" != "screen" ]; then
+					TMUX_SOCK_PATH=/tmp/tmux-$(id -u)/default
+					if [ -S $TMUX_SOCK_PATH ]; then
+									TMUX_SOCK="-S $TMUX_SOCK_PATH"
+					fi
+
+					# Start tmux
+					if which tmux > /dev/null 2>&1; then
+							#if not inside a tmux session, and if no session is started, start a new session
+							(tmux attach || tmux new-session)
+					fi
+	fi
+}
+
+update_ssh_auth_sock() {
+  export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)
+}
+
+ssh_multi() {
+
+  SSH_USER=$USER
+
+  # Get arguments
+  OPTS=$(getopt -o l: -n "ssh_multi" -- "$@")
+  eval set -- "$OPTS"
+  while true; do
+    case "$1" in
+    -l) SSH_USER=$2 ; shift 2 ;;
+    --) shift ; break ;;
+    *) echo "Internal error!" ; return ;;
+    esac
+  done
+
+  HOSTS_LIST=""
+  while read line; do
+    HOSTS_LIST="$HOSTS_LIST $line"
+  done
+  HOSTS_LIST=$(echo $HOSTS_LIST | tr '[\r\n\t ]+' ' ' | sed -E 's/(^ +| +$)//g' | sed -E 's/ +/ /g')
+
+  #echo "HOSTS_LIST=$HOSTS_LIST"
+
+  if [ -z "$HOSTS_LIST" ]; then
+    echo "No host was provided."
+    return
+  fi
+
+  NB=0
+  CMD='export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)'
+  IFS=$' '
+  for SERVER in $(echo $HOSTS_LIST); do
+    if [ $NB -eq 0 ]; then
+      tmux new-window "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
+    else
+      tmux split-window -h "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
+      tmux select-layout tiled > /dev/null
+    fi
+    NB=$((NB+1))
+  done
+  tmux select-pane -t 0
+  tmux set-option synchronize-panes on
+}
+
+START_TMUX=0
+
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
+
+if [ "$START_TMUX" -eq 1 ]; then
+	start_tmux
+fi
