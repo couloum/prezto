@@ -28,11 +28,15 @@ bindkey '^E'	end-of-line
 
 # Bind ctrl+r to history search
 bindkey '^R' history-incremental-search-backward
-bindkey "^[OB" down-line-or-search
-bindkey "^[[B" down-line-or-search
-bindkey "^[OA" up-line-or-search
-bindkey "^[[A" up-line-or-search
+#bindkey "^[OB" down-line-or-search
+#bindkey "^[[B" down-line-or-search
+#bindkey "^[OA" up-line-or-search
+#bindkey "^[[A" up-line-or-search
 
+bindkey "^[OB" history-substring-search-down
+bindkey "^[[B" history-substring-search-down
+bindkey "^[OA" history-substring-search-up
+bindkey "^[[A" history-substring-search-up
 
 
 # Set windows title in tmux sessions
