@@ -14,6 +14,7 @@ fi
 
 
 alias ...='sudo -s'
+alias @@='sudo -s'
 
 # Begin of line
 bindkey '^[[1~'	beginning-of-line
@@ -25,10 +26,28 @@ bindkey '^[[4~'	end-of-line
 bindkey '^[OF'	end-of-line
 bindkey '^E'	end-of-line
 
+# Bind ctrl+r to history search
+bindkey '^R' history-incremental-search-backward
+#bindkey "^[OB" down-line-or-search
+#bindkey "^[[B" down-line-or-search
+#bindkey "^[OA" up-line-or-search
+#bindkey "^[[A" up-line-or-search
+
+bindkey "^[OB" history-substring-search-down
+bindkey "^[[B" history-substring-search-down
+bindkey "^[OA" history-substring-search-up
+bindkey "^[[A" history-substring-search-up
+
+
 # Set windows title in tmux sessions
 # Just use server name
 zstyle ':prezto:module:terminal:tab-title' format '%m'
 zstyle ':prezto:module:terminal:window-title' format '%m'
+
+# Set custom dircolors, except on Mac OS
+if which dircolors > /dev/null 2>&1 && test -f ~/.dircolors.custom;  then
+  eval $(dircolors ~/.dircolors.custom)
+fi
 
 # Trick for du on MAC OS X
 _du() {
@@ -388,10 +407,10 @@ mssh() {
 
 }
 
+START_TMUX=0
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
 if [[ $START_TMUX -eq 1 ]]; then
   start_tmux
 fi
-
