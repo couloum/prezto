@@ -130,7 +130,7 @@ fi
 }
 
 ssh_load_identities() {
-  if [ "($uname -s)" == "Darwin" ]; then
+  if [[ "($uname -s)" == "Darwin" ]]; then
     SSH_ADD_OPT="-K -A"
   fi
 
@@ -404,6 +404,64 @@ mssh() {
     echo -e "\033[32m[$SERVER]\033[0m"
     ssh $SERVER "$@"
   done
+
+}
+
+mscp() {
+
+  if [[ $1 =~ "(-h|--help)" ]] || [[ $# -ne 4 ]]; then
+    echo "Usage:
+  1. Upload mode: mscp FILE_OR_DIR_TO_COPY serverA serverB PATH
+       Will copy FILE_OR_DIR_TO_COPY from localhost on serverB passing through serverA
+  2. Download mode: mscp serverA serverB FILE_OR_DIR_TO_COPY PATH
+       Will copy FILE_OR_DIR_TO_COPY from serverB passing through serverA on localhost"
+    return 1
+  fi
+
+  # Check if first argument is a file/directory or a server
+  if [[ -e "$1" ]]; then
+    if [[ -f "$1" ]] || [[ -d "$1" ]]; then
+      MODE="UPLOAD"
+    else
+      echo "Error: \"$1\" exists on disk, but is not a regular file or directory." >&2
+      return 1
+    fi
+  else
+    MODE="DOWNLOAD"
+  fi
+
+
+  if [[ "$MODE" == "UPLOAD" ]]; then
+    SRC_FILE=$1
+    SERVERA=$2
+    SERVERB=$3
+    DST_PATH=$4
+  else
+    SERVERA=$1
+    SERVERB=$2
+    SRC_FILE=$3
+    DST_PATH=$4
+  fi
+
+  # Check if DST_PATH is valid
+  if [[ ! -d "$DST_PATH" ]]; then
+    echo "Error: \"$DST_PATH\" is not a valid directory." >&2
+    return 1
+  fi
+
+  SRC_FILENAME=$(basename $SRC_FILE)
+  SRC_FILEPATH=$(dirname $SRC_FILE)
+
+
+  if [[ "$MODE" == "UPLOAD" ]]; then
+    CMD=$(printf 'tar -czf - -C "%s" "%s" | base64 | "ssh" %s '"'"'"ssh" %s "cat - | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar -xzf - -C \"%s\""'"'" "$SRC_FILEPATH" "$SRC_FILENAME" "$SERVERA" "$SERVERB" "$DST_PATH")
+  elif [[ "$MODE" == "DOWNLOAD" ]]; then
+    CMD=$(printf 'ssh %s '"'"'"ssh" %s "tar czf - -C \"%s\" \"%s\" | base64"'"'"' | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar xzf - -C "%s" ' "$SERVERA" "$SERVERB" "$SRC_FILEPATH" "$SRC_FILENAME" "$DST_PATH")
+  fi
+
+  echo Executing: $CMD
+  eval $CMD
+  echo Done!
 
 }
 
