@@ -172,16 +172,21 @@ ssh_multi() {
   SSH_USER=$USER
 
   # Get arguments
-  OPTS=$(getopt -o lh: -n "ssh_multi" -- "$@")
+  OPTS=$(getopt -o hl: --long help,login: -n "ssh_multi" -- "$@")
   eval set -- "$OPTS"
   while true; do
     case "$1" in
-    -h) echo 'Usage:
-   echo $SERVERS_LIST | ssh_multi
-   ssh_multi $SEVERS_LIST'
+    -h|--help) echo 'Usage:
+   echo $SERVERS_LIST | ssh_multi [OPTIONS]
+   ssh_multi [OPTIONS] $SEVERS_LIST
+ 
+ Options:
+   -h | --help           Show this menu
+   -l | --login LOGIN    Use a different login name
+ '
      shift
      ;;
-    -l) SSH_USER=$2 ; shift 2 ;;
+    -l|--login) SSH_USER=$2 ; shift 2 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; return ;;
     esac
