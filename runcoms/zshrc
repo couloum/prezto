@@ -321,8 +321,8 @@ tcopy() {
 
   # Get BASE64 CMD
   case $(uname -s) in
-    Darwin) BASE64_CMD="base64 -b0" ;;
-    *) BASE64_CMD="base64 -w0" ;;
+    Darwin) BASE64_CMD="base64 -b$WIDTH" ; STAT_CMD="stat -f %z";;
+    *) BASE64_CMD="base64 -w$WIDTH" ; STAT_CMD="stat -c %s";;
   esac
 
   if [[ "$MODE" == "STDIN" ]]; then
@@ -337,9 +337,9 @@ tcopy() {
   fi
 
   #Check size of file
-  SIZE=$(stat -f %z $FILE)
+  SIZE=$(eval $STAT_CMD $FILE)
   if [ $SIZE -gt 20000 ]; then
-    echo "Warning. Data size is $SIZE. Are you sure you want to copy on terminal? (y/n)"
+    echo "Warning. File size is $SIZE bytes. Are you sure you want to copy it on terminal? (y/n)"
     read A
     if [ "x$A" != "xy" ]; then
       # Remove temp file if any
