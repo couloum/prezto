@@ -167,58 +167,87 @@ else
 fi
 }
 
+ssh_load_identities() {
+  if [[ "($uname -s)" == "Darwin" ]]; then
+    SSH_ADD_OPT="-K -A"
+  fi
 
-start_tmux() {
-	TMUX_SOCK_PATH=/tmp/tmux-$(id -u)/default
-	if [ -S $TMUX_SOCK_PATH ]; then
-					TMUX_SOCK="-S $TMUX_SOCK_PATH"
-	fi
-
-	# Start tmux if not already in a tmux/screen session
-	if [ "$TERM" != "screen" ]; then
-					TMUX_SOCK_PATH=/tmp/tmux-$(id -u)/default
-					if [ -S $TMUX_SOCK_PATH ]; then
-									TMUX_SOCK="-S $TMUX_SOCK_PATH"
-					fi
-
-					# Start tmux
-					if which tmux > /dev/null 2>&1; then
-							#if not inside a tmux session, and if no session is started, start a new session
-							(tmux attach || tmux new-session)
-					fi
-	fi
+  ssh-add -L > /dev/null 2>&1
+  [ $? -ne 0 ] && ssh-add $SSH_ADD_OPT > /dev/null 2>&1
 }
 
 update_ssh_auth_sock() {
-  export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)
+  if [ -z $SSH_AUTH_SOCK ] || [ ! -e $SSH_AUTH_SOCK ]; then
+    export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head -n 1)
+  fi
+}
+
+
+alias ssh='ssh_load_identities ; update_ssh_auth_sock ; ssh'
+
+rssh() {
+  if [ $# -ne 1 ]; then
+    echo "Usage: rssh SERVER"
+    echo "Open ssh session in another tmux window"
+    return 1
+  fi
+  if [ "$TERM" != "screen" ]; then
+    echo "Not in a tmux session"
+    return 1
+  fi
+
+  CMD='export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)'
+  SERVER=$1
+  tmux new-window "eval $CMD; ssh $SERVER"
 }
 
 ssh_multi() {
+  if [ "$TERM" != "screen" ]; then
+    echo "Not in a tmux session"
+    return 1
+  fi
 
   SSH_USER=$USER
 
   # Get arguments
-  OPTS=$(getopt -o l: -n "ssh_multi" -- "$@")
+  OPTS=$(getopt -o hl: --long help,login: -n "ssh_multi" -- "$@")
   eval set -- "$OPTS"
   while true; do
     case "$1" in
-    -l) SSH_USER=$2 ; shift 2 ;;
+    -h|--help) echo 'Usage:
+   echo $SERVERS_LIST | ssh_multi [OPTIONS]
+   ssh_multi [OPTIONS] $SEVERS_LIST
+ 
+ Options:
+   -h | --help           Show this menu
+   -l | --login LOGIN    Use a different login name
+ '
+     shift
+     ;;
+    -l|--login) SSH_USER=$2 ; shift 2 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; return ;;
     esac
   done
 
   HOSTS_LIST=""
-  while read line; do
-    HOSTS_LIST="$HOSTS_LIST $line"
-  done
+  if read -t 0.1 line; then
+    HOSTS_LIST=$line
+    while read -t 0.1 line; do
+      HOSTS_LIST="$HOSTS_LIST $line"
+    done
+  else
+    HOSTS_LIST="$@"
+  fi
+
   HOSTS_LIST=$(echo $HOSTS_LIST | tr '[\r\n\t ]+' ' ' | sed -E 's/(^ +| +$)//g' | sed -E 's/ +/ /g')
 
-  #echo "HOSTS_LIST=$HOSTS_LIST"
-
   if [ -z "$HOSTS_LIST" ]; then
-    echo "No host was provided."
-    return
+      echo "No host was provided."
+      echo 'Usage:
+   echo $SERVERS_LIST | ssh_multi
+   ssh_multi $SEVERS_LIST'
+      return
   fi
 
   NB=0
@@ -237,10 +266,252 @@ ssh_multi() {
   tmux set-option synchronize-panes on
 }
 
+tpaste() {
+  if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
+    echo "Usage:
+  tpaste > FILENAME
+  tpaste FILENAME
+  echo \$DATA | tpaste
+  echo \$DATA | tpaste FILENAME"
+    return 1
+  fi
+
+  if [ $# -eq 1 ]; then
+    if [ -f $1 ]; then
+      echo "File $1 already exist. Do you want to overwrite it? (y/n)"
+      read A
+      if [ "x$A" != "xy" ]; then
+        return 0
+      fi
+    fi
+    OUT=$1
+  else
+    OUT=/dev/stdout
+  fi
+
+  # Get BASE64 CMD
+  case $(uname -s) in
+    Darwin) BASE64_OPT="-D" ;;
+    *) BASE64_OPT="-d" ;;
+  esac
+
+
+  # Check if input from stdin
+  if ! read -t 0.1 LINE; then
+    echo "Paste your base64 text here and finish with single '.' on one line:"
+    LINE=""
+    TEXT=""
+    while true; do
+      read LINE
+      if [ "x$LINE" = "x." ]; then
+        break
+      fi
+      TEXT="${TEXT}${LINE}"
+    done
+  else
+    TEXT=$LINE;
+    while read -t 0.1 LINE; do
+      TEXT="${TEXT}${LINE}"
+    done
+  fi
+
+  echo $TEXT | base64 $BASE64_OPT | gunzip -c >! $OUT
+}
+
+tcopy() {
+
+  if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
+    echo "Usage:
+  tcopy FILENAME
+  cat FILENAME | tcopy"
+    return 1
+  fi
+
+  # Test if we got input from stdin or a filename
+  if ! read -t 0.1 FIRST_LINE; then
+    # If no input from stdin, test if there is a filename given as argument
+    if [ $# -ne 1 ]; then
+      # If not, show usage
+      echo "Usage:
+  tcopy FILENAME
+  cat FILENAME | tcopy"
+      return 1
+    else
+      # If yes, check if file exists
+      FILE=$1
+
+      if [ ! -f $FILE ]; then
+        echo "File $FILE does not exists"
+        return 1
+      fi
+      MODE="FILENAME"
+    fi
+  else
+    MODE="STDIN"
+  fi
+
+  # Get terminal width
+  WIDTH=$(tput cols)
+  if [ $WIDTH -lt 20 ]; then
+    echo "Your terminal width is too low (<30 columns)"
+    return 1
+  fi
+
+  # Get BASE64 CMD
+  case $(uname -s) in
+    Darwin) BASE64_CMD="base64 -b0" ;;
+    *) BASE64_CMD="base64 -w0" ;;
+  esac
+
+  if [[ "$MODE" == "STDIN" ]]; then
+    # Store input in a temp file
+    TCOPY_TEMP_FILE=$(mktemp /tmp/tcopy.XXXXX)
+    echo $FIRST_LINE >> $TCOPY_TEMP_FILE
+
+    while read -t 0.1 LINE; do
+      echo $LINE >> $TCOPY_TEMP_FILE
+    done
+    FILE=$TCOPY_TEMP_FILE
+  fi
+
+  #Check size of file
+  SIZE=$(stat -f %z $FILE)
+  if [ $SIZE -gt 20000 ]; then
+    echo "Warning. Data size is $SIZE. Are you sure you want to copy on terminal? (y/n)"
+    read A
+    if [ "x$A" != "xy" ]; then
+      # Remove temp file if any
+      [[ ! -z $TCOPY_TEMP_FILE ]] && [[ -f $TCOPY_TEMP_FILE ]] && rm -f $TCOPY_TEMP_FILE
+      return 0
+    fi
+  fi
+
+  CMD="cat \"$FILE\" | gzip -c | $BASE64_CMD"
+  eval $CMD
+
+  # Remove temp file if any
+  [[ ! -z $TCOPY_TEMP_FILE ]] && [[ -f $TCOPY_TEMP_FILE ]] && rm -f $TCOPY_TEMP_FILE
+
+}
+
+
+start_tmux() {
+  TMUX_SOCK_PATH="/tmp/tmux-$(id -u)/default"
+  if [ -S $TMUX_SOCK_PATH ]; then
+    TMUX_SOCK="-S $TMUX_SOCK_PATH"
+  fi
+
+  # Start tmux if not already in a tmux/screen session
+  if [ "$TERM" != "screen" ]; then
+    # Start tmux
+    if which tmux > /dev/null 2>&1; then
+      #if not inside a tmux session, and if no session is started, start a new session
+      (tmux attach || tmux new-session)
+    fi
+  fi
+}
+
+lh() {
+  if ! which llh > /dev/null 2>&1; then
+    echo "llh command not found."
+    return 1
+  fi
+
+  FILTER=$1
+  IFS=$'\r\n'
+  for line in $(llh $FILTER); do
+    SERVER=$(echo $line | awk '{print $2}')
+    echo -n "$SERVER "
+  done
+  echo
+}
+
+mssh() {
+  HOSTS_LIST=""
+  while read line; do
+    HOSTS_LIST="$HOSTS_LIST $line"
+  done
+  HOSTS_LIST=$(echo $HOSTS_LIST | tr '[\r\n\t ]+' ' ' | sed -E 's/(^ +| +$)//g' | sed -E 's/ +/ /g')
+
+  #echo "HOSTS_LIST=$HOSTS_LIST"
+
+  if [ -z "$HOSTS_LIST" ]; then
+    echo "No host was provided."
+    echo "Usage:"
+    echo '  echo $LIST_OF_HOSTS" | mssh CMD'
+    return 1
+  fi
+
+  IFS=$' '
+  for SERVER in $(echo $HOSTS_LIST); do
+    echo -e "\033[32m[$SERVER]\033[0m"
+    ssh $SERVER "$@"
+  done
+
+}
+
+mscp() {
+
+  if [[ $1 =~ "(-h|--help)" ]] || [[ $# -ne 4 ]]; then
+    echo "Usage:
+  1. Upload mode: mscp FILE_OR_DIR_TO_COPY serverA serverB PATH
+       Will copy FILE_OR_DIR_TO_COPY from localhost on serverB passing through serverA
+  2. Download mode: mscp serverA serverB FILE_OR_DIR_TO_COPY PATH
+       Will copy FILE_OR_DIR_TO_COPY from serverB passing through serverA on localhost"
+    return 1
+  fi
+
+  # Check if first argument is a file/directory or a server
+  if [[ -e "$1" ]]; then
+    if [[ -f "$1" ]] || [[ -d "$1" ]]; then
+      MODE="UPLOAD"
+    else
+      echo "Error: \"$1\" exists on disk, but is not a regular file or directory." >&2
+      return 1
+    fi
+  else
+    MODE="DOWNLOAD"
+  fi
+
+
+  if [[ "$MODE" == "UPLOAD" ]]; then
+    SRC_FILE=$1
+    SERVERA=$2
+    SERVERB=$3
+    DST_PATH=$4
+  else
+    SERVERA=$1
+    SERVERB=$2
+    SRC_FILE=$3
+    DST_PATH=$4
+  fi
+
+  # Check if DST_PATH is valid
+  if [[ ! -d "$DST_PATH" ]]; then
+    echo "Error: \"$DST_PATH\" is not a valid directory." >&2
+    return 1
+  fi
+
+  SRC_FILENAME=$(basename $SRC_FILE)
+  SRC_FILEPATH=$(dirname $SRC_FILE)
+
+
+  if [[ "$MODE" == "UPLOAD" ]]; then
+    CMD=$(printf 'tar -czf - -C "%s" "%s" | base64 | "ssh" %s '"'"'"ssh" %s "cat - | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar -xzf - -C \"%s\""'"'" "$SRC_FILEPATH" "$SRC_FILENAME" "$SERVERA" "$SERVERB" "$DST_PATH")
+  elif [[ "$MODE" == "DOWNLOAD" ]]; then
+    CMD=$(printf 'ssh %s '"'"'"ssh" %s "tar czf - -C \"%s\" \"%s\" | base64"'"'"' | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar xzf - -C "%s" ' "$SERVERA" "$SERVERB" "$SRC_FILEPATH" "$SRC_FILENAME" "$DST_PATH")
+  fi
+
+  echo Executing: $CMD
+  eval $CMD
+  echo Done!
+
+}
+
 START_TMUX=0
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
-if [ "$START_TMUX" -eq 1 ]; then
-	start_tmux
+if [[ $START_TMUX -eq 1 ]]; then
+  start_tmux
 fi
