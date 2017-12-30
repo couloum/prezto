@@ -222,7 +222,7 @@ ssh_multi() {
    -h | --help           Show this menu
    -l | --login LOGIN    Use a different login name
  '
-     shift
+     return
      ;;
     -l|--login) SSH_USER=$2 ; shift 2 ;;
     --) shift ; break ;;
