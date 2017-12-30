@@ -198,19 +198,20 @@ rssh() {
 
   CMD='export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)'
   SERVER=$1
-  tmux new-window "eval $CMD; ssh $SERVER"
+  tmux new-window -n "$SERVER" "eval $CMD; ssh $SERVER"
 }
 
 ssh_multi() {
-  if [ "$TERM" != "screen" ]; then
+  if [[ -z $TUMX ]] && [[ $TERM != screen* ]]; then
     echo "Not in a tmux session"
     return 1
   fi
 
   SSH_USER=$USER
+  TMUX_OPTS=""
 
   # Get arguments
-  OPTS=$(getopt -o hl: --long help,login: -n "ssh_multi" -- "$@")
+  OPTS=$(getopt -o hl:t: --long help,login:,title: -n "ssh_multi" -- "$@")
   eval set -- "$OPTS"
   while true; do
     case "$1" in
@@ -221,10 +222,12 @@ ssh_multi() {
  Options:
    -h | --help           Show this menu
    -l | --login LOGIN    Use a different login name
+   -t | --title TITLE    Set tmux window title
  '
      return
      ;;
     -l|--login) SSH_USER=$2 ; shift 2 ;;
+    -t|--title) TMUX_TITLE"$2" ; shift 2 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; return ;;
     esac
@@ -255,7 +258,8 @@ ssh_multi() {
   IFS=$' '
   for SERVER in $(echo $HOSTS_LIST); do
     if [ $NB -eq 0 ]; then
-      tmux new-window "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
+      [[ -z $TMUX_TITLE ]] && TMUX_TITLE=$SERVER
+      tmux new-window -n $TMUX_TITLE "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
     else
       tmux split-window -h "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
       tmux select-layout tiled > /dev/null
@@ -426,6 +430,43 @@ lh() {
   echo
 }
 
+slh() {
+  if ! which llh > /dev/null 2>&1; then
+    echo "llh command not found."
+    return 1
+  fi
+
+  SSH_MULTI_OPTS=""
+
+  # Get arguments
+  OPTS=$(getopt -o hl:t: --long help,login:,title: -n "slh" -- "$@")
+  eval set -- "$OPTS"
+  while true; do
+    case "$1" in
+    -h|--help) echo 'Usage: slh [OPTIONS] LLH_FILTER
+
+ SSH connect to multiple servers corresponding to the given `llh` filter.
+
+ Options:
+   -h | --help           Show this menu
+   -l | --login LOGIN    Use a different login name
+   -t | --title TITLE    Set tmux window title
+ '
+     return
+     ;;
+    -l|--login) SSH_MULTI_OPTS="-l $2" ; shift 2 ;;
+    -t|--title) SSH_MULTI_OPTS="-t $2" ; shift 2 ;;
+    --) shift ; break ;;
+    *) echo "Internal error!" ; return ;;
+    esac
+  done
+
+  FILTER=$1
+
+  CMD=$(echo "lh $FILTER | ssh_multi $SSH_MULTI_OPTS")
+  eval $CMD
+}
+
 mssh() {
   HOSTS_LIST=""
   while read line; do
@@ -506,6 +547,10 @@ mscp() {
   eval $CMD
   echo Done!
 
+}
+
+set_tmux_title() {
+  printf "\033k$1\033\\"
 }
 
 START_TMUX=0
