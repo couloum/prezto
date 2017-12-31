@@ -12,6 +12,32 @@ function prompt_couloum_precmd {
   fi
 }
 
+function color_hostname {
+  if [ "$USER" = "root" ]; then
+    COLOR="red"
+  else
+    COLOR="magenta"
+  fi
+
+  # Make Sure we get only the hostname
+  SERVER=$(hostname -s)
+
+  # Detect VadeSecure style hostname and color in white platform name
+  # Or symply color full hostname in its short form
+  if [[ $SERVER =~ '^([a-zA-Z]+[0-9]+)([a-zA-Z]+[0-9]+[a-zA-Z])(\..*)?$' ]]; then
+    PLATFORM=$match[1]
+    NAME=$match[2]
+    RETURN="%K{$COLOR}%F{black}${PLATFORM}%k%F{$COLOR}${NAME}%f"
+    RETURN="%F{white}${PLATFORM}%k%F{$COLOR}${NAME}%f"
+  elif [[ $SERVER =~ '^([a-zA-Z0-9]+)(\..*)?$' ]]; then
+    NAME=$match[1]
+    RETURN="%F{$COLOR}$NAME%f"
+  else
+    RETURN="%F{$COLOR}$SERVER%f"
+  fi
+  echo $RETURN
+}
+
 function prompt_couloum_setup {
 
   setopt LOCAL_OPTIONS
@@ -24,31 +50,27 @@ function prompt_couloum_setup {
   # Add hook to set up prompt parameters before each command.
   add-zsh-hook precmd prompt_couloum_precmd
 
-  if [ "$USER" = "root" ]; then
-    HOSTNAMECOLOR="red"
-  else
-    HOSTNAMECOLOR="magenta"
-  fi
-
   # Set git-info parameters.
   zstyle ':prezto:module:git:info' verbose 'yes'
   zstyle ':prezto:module:git:info:branch' format "%f"$'\uE0A0'"%F{white}%b%f"   # 
   zstyle ':prezto:module:git:info:added' format "%F{white}"$'\u271A'"%f"        # ✚
   zstyle ':prezto:module:git:info:deleted' format "%F{white}"$'\u2718'"%f"      # ✘
   zstyle ':prezto:module:git:info:modified' format "%F{white}"$'\u25CF'"%f"     # ●
-  zstyle ':prezto:module:git:info:untracked' format "%F{white}?%f"    # ?
+  zstyle ':prezto:module:git:info:untracked' format "%F{white}?%f"              # ?
   zstyle ':prezto:module:git:info:ahead' format "%F{white}"$'\u2191'"%A%f"      # ↑
   zstyle ':prezto:module:git:info:behind' format "%F{white}"$'\u2193'"%B%f"     # ↓
-  zstyle ':prezto:module:git:info:keys' format 'prompt' '%f(%b%A%B%d%a%m%u)'      # (master↑10↓3✘✚●?)
+  zstyle ':prezto:module:git:info:keys' format 'prompt' '%f(%b%A%B%d%a%m%u)'    # (master↑10↓3✘✚●?)
 
   # Set editor parameters
   zstyle ':prezto:module:editor:info:keymap:primary' format ''
   zstyle ':prezto:module:editor:info:keymap:alternate' format '%F{green}[vim]%f'
 
+  SERVERNAME=$(color_hostname)
+
   # Define prompts.
   #PROMPT="%F{blue}<%F{cyan}%T%F{blue}>[%F{$HOSTNAMECOLOR}%m%F{blue}:%F{yellow}%4~%F{blue}]"'${git_info:+${(e)git_info[prompt]}}''${editor_info[keymap]}'"%f%# "
   #PROMPT="%F{$HOSTNAMECOLOR}%m%F{blue}"'${editor_info[keymap]}'"%F{yellow}%3~%f%# "
-  PROMPT="%(?..%F{red}%?"$'\u2718'"%F{blue}|%f)%F{cyan}%T%F{blue}|%F{$HOSTNAMECOLOR}%m%F{green}>%F{yellow}%3~%f"'${editor_info[keymap]}'"%# "
+  PROMPT="%(?..%F{red}%?"$'\u2718'"%F{blue}|%f)%F{cyan}%T%F{blue}|${SERVERNAME}%F{green}>%F{yellow}%3~%f"'${editor_info[keymap]}'"%# "
   #RPROMPT='%F{blue}${ruby_info[version]}'
   #RPROMPT="%(?..%F{red}»%? %f)"'${git_info:+${(e)git_info[prompt]}}'"%F{blue}[%F{cyan}%T%F{blue}]"
   RPROMPT='${git_info:+${(e)git_info[prompt]}}'

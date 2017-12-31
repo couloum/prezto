@@ -191,7 +191,7 @@ rssh() {
     echo "Open ssh session in another tmux window"
     return 1
   fi
-  if [ "$TERM" != "screen" ]; then
+  if [[ -z $TUMX ]] && [[ $TERM != screen* ]]; then
     echo "Not in a tmux session"
     return 1
   fi
@@ -227,7 +227,7 @@ ssh_multi() {
      return
      ;;
     -l|--login) SSH_USER=$2 ; shift 2 ;;
-    -t|--title) TMUX_TITLE"$2" ; shift 2 ;;
+    -t|--title) TMUX_TITLE=$2 ; shift 2 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; return ;;
     esac
@@ -436,7 +436,8 @@ slh() {
     return 1
   fi
 
-  SSH_MULTI_OPTS=""
+  SSH_LOGIN=""
+  TMUX_TITLE=""
 
   # Get arguments
   OPTS=$(getopt -o hl:t: --long help,login:,title: -n "slh" -- "$@")
@@ -454,8 +455,8 @@ slh() {
  '
      return
      ;;
-    -l|--login) SSH_MULTI_OPTS="-l $2" ; shift 2 ;;
-    -t|--title) SSH_MULTI_OPTS="-t $2" ; shift 2 ;;
+    -l|--login) SSH_LOGIN=$2 ; shift 2 ;;
+    -t|--title) TMUX_TITLE=$2 ; shift 2 ;;
     --) shift ; break ;;
     *) echo "Internal error!" ; return ;;
     esac
@@ -463,7 +464,10 @@ slh() {
 
   FILTER=$1
 
-  CMD=$(echo "lh $FILTER | ssh_multi $SSH_MULTI_OPTS")
+  [[ -z $TMUX_TITLE ]] && TMUX_TITLE=$FILTER
+  [[ ! -z $SSH_LOGIN ]] && SSH_LOGIN="-l $SSH_LOGIN"
+
+  CMD=$(echo "lh $FILTER | ssh_multi $SSH_LOGIN $TMUX_TITLE")
   eval $CMD
 }
 
