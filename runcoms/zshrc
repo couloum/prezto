@@ -18,6 +18,9 @@ fi
 alias ...='sudo -s'
 alias @@='sudo -s'
 
+# Update .myconfig git repo
+alias upmyc="$HOME/.myconfig/update"
+
 # Listing
 # Execute \kbd{ls -lSrah}
 alias dir="command ls -lSrah"
@@ -218,7 +221,7 @@ ssh_multi() {
     -h|--help) echo 'Usage:
    echo $SERVERS_LIST | ssh_multi [OPTIONS]
    ssh_multi [OPTIONS] $SEVERS_LIST
- 
+
  Options:
    -h | --help           Show this menu
    -l | --login LOGIN    Use a different login name
