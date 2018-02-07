@@ -10,6 +10,11 @@ if [[ -s "${ZDOTDIR:-$HOME}/.zprezto/init.zsh" ]]; then
   source "${ZDOTDIR:-$HOME}/.zprezto/init.zsh"
 fi
 
+# Add common folders to path
+if ! echo $PATH | grep -q /opt/puppetlabs/bin && [ -d /opt/puppetlabs/bin ]; then
+  export PATH=$PATH:/opt/puppetlabs/bin
+fi
+
 #
 # Custom aliases
 #
