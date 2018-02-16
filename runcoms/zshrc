@@ -561,6 +561,24 @@ mscp() {
 
 }
 
+delay() {
+  if [[ $# -lt 2 ]] || [[ ! $1 =~ ^[0-9]+$ ]]; then
+    echo "Usage: delay MAX_TIME COMMAND"
+    echo "Execute a command after a random delay of maximum <MAX_TIME> seconds."
+    return 1
+  fi
+
+  DELAY=$1
+  shift
+  COMMAND="$@"
+
+  WAIT_TIME=$(($RANDOM % $DELAY))
+  echo "Your command will be executed in $WAIT_TIME seconds."
+  sleep $WAIT_TIME
+  eval $COMMAND
+  return $?
+}
+
 set_tmux_title() {
   printf "\033k$1\033\\"
 }
