@@ -545,14 +545,17 @@ mscp() {
     return 1
   fi
 
+  # Check if `pv` command exist, otherwise use `cat`
+  which pv > /dev/null 2>&1 && CAT_CMD="pv" || CAT_CMD="cat -"
+
   SRC_FILENAME=$(basename $SRC_FILE)
   SRC_FILEPATH=$(dirname $SRC_FILE)
 
 
   if [[ "$MODE" == "UPLOAD" ]]; then
-    CMD=$(printf 'tar -czf - -C "%s" "%s" | base64 | "ssh" %s '"'"'"ssh" %s "cat - | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar -xzf - -C \"%s\""'"'" "$SRC_FILEPATH" "$SRC_FILENAME" "$SERVERA" "$SERVERB" "$DST_PATH")
+    CMD=$(printf 'tar -czf - -C "%s" "%s" | %s | base64 | "ssh" %s '"'"'"ssh" %s "cat - | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar -xzf - -C \"%s\""'"'" "$SRC_FILEPATH" "$SRC_FILENAME" "$CAT_CMD" "$SERVERA" "$SERVERB" "$DST_PATH")
   elif [[ "$MODE" == "DOWNLOAD" ]]; then
-    CMD=$(printf 'ssh %s '"'"'"ssh" %s "tar czf - -C \"%s\" \"%s\" | base64"'"'"' | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | tar xzf - -C "%s" ' "$SERVERA" "$SERVERB" "$SRC_FILEPATH" "$SRC_FILENAME" "$DST_PATH")
+    CMD=$(printf 'ssh %s '"'"'"ssh" %s "tar czf - -C \"%s\" \"%s\" | base64"'"'"' | ( [[ $(uname -s) == Darwin ]] && base64 -D || base64 -d ) | %s | tar xzf - -C "%s" ' "$SERVERA" "$SERVERB" "$SRC_FILEPATH" "$SRC_FILENAME" "$CAT_CMD" "$DST_PATH")
   fi
 
   echo Executing: $CMD
