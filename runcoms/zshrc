@@ -23,6 +23,11 @@ fi
 alias ...='sudo -s'
 alias @@='sudo -s'
 
+# df on Linux only
+if [[ "$(uname -s)" == "Linux" ]]; then
+  alias df='df -khT -x overlay -x tmpfs -x devtmpfs'
+fi
+
 # Update .myconfig git repo
 alias upmyc="$HOME/.myconfig/update"
 
