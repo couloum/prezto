@@ -191,8 +191,13 @@ ssh_load_identities() {
 
 update_ssh_auth_sock() {
   if [ -z $SSH_AUTH_SOCK ] || [ ! -e $SSH_AUTH_SOCK ]; then
-    export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head -n 1)
+    # Find latest auth sock
+    SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
   fi
+}
+
+list_ssh_auth_sock() {
+    find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) -exec ls -l '{}' \; 2>/dev/null
 }
 
 
