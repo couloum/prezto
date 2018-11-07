@@ -10,7 +10,26 @@
 
 SAYINGS=(
     "So long and thanks for all the fish.\n  -- Douglas Adams"
-    "Good morning! And in case I don't see ya, good afternoon, good evening and goodnight.\n  --Truman Burbank"
+    "Good morning! And in case I don't see ya, good afternoon, good evening and goodnight.\n  -- Truman Burbank"
+    "If you tell the truth, you don't have to remember anything.\ -- Mark Twain"
+    "The opposite of love is not hate, it's indifference.\n -- Elie Wiesel"
+    "If I'm not back in five minutes, just wait longer.\n -- Ace Ventura"
+    "Invention, my dear friends, is 93% perspiration, 6% electricity,\n4% evaporation, and 2% butterscotch ripple.\n -- Willy Wonka"
+    "Do you know of the Klingon proverb that tells us revenge is a dish\nthat is best served cold? It is very cold in space.\n -- Khan"
+    "I find your lack of faith disturbing.\n -- Darth Vader"
+    "Hokey religions and ancient weapons are no substitute for a good blaster at your side, kid.\n -- Han Solo"
+    "Try not. Do, or do not. There is no try.\n -- Yoda"
+    "Wait a minute, Doc. Ah... Are you telling me you built a time machine... out of a DeLorean?\n -- Marty McFly"
+    "Don't call me a mindless philosopher, you overweight blob of grease!\n -- C3PO"
+    "I know kung fu.\n -- Neo"
+    "Oooh, ahhh, that's how it always starts. Then later there's running and screaming.\n -- Ian Malcom"
+    "These aren't the droids you're looking for.\n -- Obi-Wan"
+    "We came, we saw, we kicked its ass.\n -- Dr. Peter Venkman"
+    "The only limits for tomorrow are the doubts we have today.\n -- Pittacus Lore"
+    "If we wait until we’re ready, we’ll be waiting for the rest of our lives.\n -- Lemony Snicket"
+    "If you’re making mistakes it means you’re out there doing something.\n -- Neil Gaiman"
+    "We must all face the choice between what is right and what is easy.\n -- J.K. Rowling"
+    "All we have to decide is what to do with the time that is given to us.\n -- J.R.R. Tolkien"
 )
 
 # Print a randomly-chosen message:
