@@ -11,7 +11,7 @@
 SAYINGS=(
     "So long and thanks for all the fish.\n  -- Douglas Adams"
     "Good morning! And in case I don't see ya, good afternoon, good evening and goodnight.\n  -- Truman Burbank"
-    "If you tell the truth, you don't have to remember anything.\ -- Mark Twain"
+    "If you tell the truth, you don't have to remember anything.\n -- Mark Twain"
     "The opposite of love is not hate, it's indifference.\n -- Elie Wiesel"
     "If I'm not back in five minutes, just wait longer.\n -- Ace Ventura"
     "Invention, my dear friends, is 93% perspiration, 6% electricity,\n4% evaporation, and 2% butterscotch ripple.\n -- Willy Wonka"
@@ -33,6 +33,8 @@ SAYINGS=(
 )
 
 # Print a randomly-chosen message:
+echo
 echo $SAYINGS[$(($RANDOM % ${#SAYINGS} + 1))]
+echo
 
 } >&2
