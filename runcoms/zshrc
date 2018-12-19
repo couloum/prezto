@@ -598,11 +598,12 @@ set_tmux_title() {
 
 START_TMUX=0
 
+test -f /etc/kubernetes/admin.conf && export KUBECONFIG=/etc/kubernetes/admin.conf
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
 if [[ $START_TMUX -eq 1 ]]; then
   start_tmux
 fi
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
 
