@@ -603,3 +603,6 @@ START_TMUX=0
 if [[ $START_TMUX -eq 1 ]]; then
   start_tmux
 fi
+
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+
