@@ -6,6 +6,12 @@
 #   Sorin Ionescu <sorin.ionescu@gmail.com>
 #
 
+# Read /etc/profile if present
+
+if [[ -f /etc/profile ]]; then
+  source /etc/profile
+fi
+
 #
 # Browser
 #
