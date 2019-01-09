@@ -190,14 +190,21 @@ ssh_load_identities() {
 }
 
 update_ssh_auth_sock() {
-  if [ -z $SSH_AUTH_SOCK ] || [ ! -e $SSH_AUTH_SOCK ]; then
-    # Find latest auth sock
-    SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+  if [ -z $SSH_AUTH_SOCK ] || [ ! -e $SSH_AUTH_SOCK ] || ! ssh-add -l > /dev/null 2>&1 ; then
+    if which /opt/vadesecure/devops-tools/bin/sshauth > /dev/null 2>&1; then
+      $(sshauth -e)
+    else
+      SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+    fi
   fi
 }
 
 list_ssh_auth_sock() {
-    find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) -exec ls -l '{}' \; 2>/dev/null
+    if which sshauth; then
+      sshauth -a
+    else
+      find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) -exec ls -l '{}' \; 2>/dev/null
+    fi
 }
 
 
@@ -288,6 +295,7 @@ ssh_multi() {
   tmux set-option synchronize-panes on
 }
 
+if ! which tpaste > /dev/null 2>&1; then
 tpaste() {
   if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
     echo "Usage:
@@ -339,7 +347,9 @@ tpaste() {
 
   echo $TEXT | base64 $BASE64_OPT | gunzip -c >! $OUT
 }
+fi
 
+if ! which tcopy > /dev/null 2>&1; then
 tcopy() {
 
   if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
@@ -415,6 +425,7 @@ tcopy() {
   [[ ! -z $TCOPY_TEMP_FILE ]] && [[ -f $TCOPY_TEMP_FILE ]] && rm -f $TCOPY_TEMP_FILE
 
 }
+fi
 
 
 start_tmux() {
@@ -448,6 +459,7 @@ lh() {
   echo
 }
 
+if ! which slh > /dev/null 2>&1; then
 slh() {
   if ! which llh > /dev/null 2>&1; then
     echo "llh command not found."
@@ -488,6 +500,7 @@ slh() {
   CMD=$(echo "lh $FILTER | ssh_multi $SSH_LOGIN $TMUX_TITLE")
   eval $CMD
 }
+fi
 
 mssh() {
   HOSTS_LIST=""
