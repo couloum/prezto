@@ -200,7 +200,7 @@ update_ssh_auth_sock() {
 }
 
 list_ssh_auth_sock() {
-    if which sshauth; then
+    if which sshauth > /dev/null 2>&1; then
       sshauth -a
     else
       find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) -exec ls -l '{}' \; 2>/dev/null
