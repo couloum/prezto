@@ -190,7 +190,7 @@ ssh_load_identities() {
 }
 
 update_ssh_auth_sock() {
-  if [ -z $SSH_AUTH_SOCK ] || [ ! -e $SSH_AUTH_SOCK ] || ! ssh-add -l > /dev/null 2>&1 ; then
+  if [ -z $SSH_AUTH_SOCK ] || [ ! -L $SSH_AUTH_SOCK ] || [[ "$SSH_AUTH_SOCK" != "$HOME/.sshagent.sock" ]] || ! ssh-add -l > /dev/null 2>&1 ; then
     if which /opt/vadesecure/devops-tools/bin/sshauth > /dev/null 2>&1; then
       sshauth -l $HOME/.sshagent.sock
     else
@@ -615,6 +615,7 @@ START_TMUX=0
 
 test -f /etc/kubernetes/admin.conf && export KUBECONFIG=/etc/kubernetes/admin.conf
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+update_ssh_auth_sock > /dev/null 2>&1
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
