@@ -630,7 +630,7 @@ START_TMUX=0
 
 test -f /etc/kubernetes/admin.conf && export KUBECONFIG=/etc/kubernetes/admin.conf
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-#update_ssh_auth_sock > /dev/null 2>&1
+update_ssh_auth_sock > /dev/null 2>&1
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
