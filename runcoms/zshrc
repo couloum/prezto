@@ -180,8 +180,15 @@ else
 fi
 }
 
+on_darwin() {
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    return 0
+  fi
+  return 1
+}
+
 ssh_load_identities() {
-  if [[ "($uname -s)" == "Darwin" ]]; then
+  if on_darwin; then
     SSH_ADD_OPT="-K -A"
   fi
 
@@ -191,11 +198,19 @@ ssh_load_identities() {
 
 update_ssh_auth_sock() {
   if [ -z $SSH_AUTH_SOCK ] || [ ! -L $SSH_AUTH_SOCK ] || [[ "$SSH_AUTH_SOCK" != "$HOME/.sshagent.sock" ]] || ! ssh-add -l > /dev/null 2>&1 ; then
-    if which /opt/vadesecure/devops-tools/bin/sshauth > /dev/null 2>&1; then
+    if which sshauth > /dev/null 2>&1; then
       sshauth -l $HOME/.sshagent.sock
     else
-      SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
-      ln -sf $SSH_AUTH_SOCK $HOME/.sshagent.sock
+      if on_darwin; then
+        SSH_AUTH_SOCK=$(find /private/tmp/ -path "*/com.apple.launchd.*" -name "Listeners" -uid $(id -u) > /dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+      else
+        SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+      fi
+      if [[ ! -z $SSH_AUTH_SOCK ]]; then
+        ln -sf $SSH_AUTH_SOCK $HOME/.sshagent.sock
+      else
+        echo "Could not find valid SSH agent socker" >&2
+      fi
     fi
     export SSH_AUTH_SOCK=$HOME/.sshagent.sock
   fi
@@ -615,7 +630,7 @@ START_TMUX=0
 
 test -f /etc/kubernetes/admin.conf && export KUBECONFIG=/etc/kubernetes/admin.conf
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
-update_ssh_auth_sock > /dev/null 2>&1
+#update_ssh_auth_sock > /dev/null 2>&1
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
 
