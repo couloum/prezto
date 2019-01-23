@@ -74,7 +74,7 @@ if [[ $commands[kubectl] ]]; then
   alias kla="kubectl -n '$KUBE_NAMESPACE' get all"
   alias ke="kubectl -n '$KUBE_NAMESPACE' exec -ti"
 
-  source < (kubectl completion zsh)
+  source <(kubectl completion zsh)
 fi
 
 #
