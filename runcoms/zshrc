@@ -66,13 +66,13 @@ alias lsolddir="command ls -rthdl *(/Om[1,10]) .*(D/Om[1,10])"
 # Kubernetes aliases and completion
 if [[ $commands[kubectl] ]]; then
   KUBE_NAMESPACE="default"
-  alias k="kubectl -n '$KUBE_NAMESPACE'"
-  alias ktailf="kubectl -n '$KUBE_NAMESPACE' logs --tail 10 -f"
-  alias klp="kubectl -n '$KUBE_NAMESPACE' get pods"
-  alias kld="kubectl -n '$KUBE_NAMESPACE' get deploy"
-  alias kls="kubectl -n '$KUBE_NAMESPACE' get services"
-  alias kla="kubectl -n '$KUBE_NAMESPACE' get all"
-  alias ke="kubectl -n '$KUBE_NAMESPACE' exec -ti"
+  alias k="kubectl -n \$KUBE_NAMESPACE"
+  alias ktailf="k logs --tail 10 -f"
+  alias klp="k get pods"
+  alias kld="k get deploy"
+  alias kls="k get services"
+  alias kla="k get all"
+  alias ke="k exec -ti"
 
   source <(kubectl completion zsh)
 fi
