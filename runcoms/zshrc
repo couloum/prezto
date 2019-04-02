@@ -66,15 +66,31 @@ alias lsolddir="command ls -rthdl *(/Om[1,10]) .*(D/Om[1,10])"
 # Kubernetes aliases and completion
 if [ $commands[kubectl] ]; then
   KUBE_NAMESPACE="default"
-  alias k="kubectl -n \$KUBE_NAMESPACE"
+
+  #k = kubectl -n $KUBE_NAMESPACE 
+  k() {
+    # Check if parameter -n or --namespace is present
+    if echo "$@" | grep -qE ' (-n |--namespace[ =])'; then
+      kubectl "$@"
+    else
+      kubectl -n $KUBE_NAMESPACE "$@"
+    fi
+  }
+
   alias ktailf="k logs --tail 10 -f"
   alias klp="k get pods"
   alias kld="k get deploy"
   alias kls="k get services"
+  alias kpvc="k get pvc"
+  alias kpv="k get pv"
   alias kla="k get all"
   alias ke="k exec -ti"
 
   source <(kubectl completion zsh)
+
+  kn() {
+    export KUBE_NAMESPACE=$1
+  }
 fi
 
 #
@@ -639,6 +655,91 @@ delay() {
 set_tmux_title() {
   printf "\033k$1\033\\"
 }
+
+
+
+rcopy() {
+  if  ! which curl > /dev/null 2>&1; then
+    echo "Error: curl not found. Please, install it."
+    return 1
+  fi
+
+  if [ $# -eq 0 ];then
+    echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;
+  fi;
+  if tty -s;then
+    file="$1";file_name=$(basename "$file");
+
+    if [ ! -e "$file" ];then
+      echo "$file: No such file or directory">&2;return 1;
+    fi;
+    if [ -d "$file" ];then
+      dir_name="$file_name"
+      file_name="$file_name.tar.gz"
+      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+    else
+      cat "$file" | curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+    fi;
+  else
+      file_name=$1
+      curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+  fi;
+  echo ""
+}
+
+rpaste() {
+  URL=$1
+  if [[ ! $URL =~ ^http ]]; then
+    echo "Error: 1st parameter must be an URL"
+  fi
+
+  filename=$(basename $URL)
+
+  curl -o $filename $URL
+}
+
+myrcopy() {
+
+  if  ! which curl > /dev/null 2>&1; then
+    echo "Error: curl not found. Please, install it."
+    return 1
+  fi
+
+  if [ $# -eq 0 ];then
+    echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;
+  fi;
+  if tty -s;then
+    file="$1";file_name=$(basename "$file");
+
+    if [ ! -e "$file" ];then
+      echo "$file: No such file or directory">&2;return 1;
+    fi;
+    if [ -d "$file" ];then
+      dir_name="$file_name"
+      file_name="$file_name.tar.gz"
+      (tar czf - -C $file/.. $dir_name) | curl -H 'X-Transfer-Token: 294736073e19ad87c83bb3abe7f2cec01795edf8' -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+    else
+      cat "$file" | curl -H 'X-Transfer-Token: 294736073e19ad87c83bb3abe7f2cec01795edf8' -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+    fi;
+  else
+      file_name=$1
+      curl -H 'X-Transfer-Token: 294736073e19ad87c83bb3abe7f2cec01795edf8' -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+  fi;
+  echo ""
+}
+
+myrpaste() {
+  URL=$1
+  if [[ ! $URL =~ ^http ]]; then
+    echo "Error: 1st parameter must be an URL"
+  fi
+
+  filename=$(basename $URL)
+
+  curl -H 'X-Transfer-Token: 294736073e19ad87c83bb3abe7f2cec01795edf8' -o $filename $URL
+}
+
+
 
 START_TMUX=0
 
