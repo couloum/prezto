@@ -65,6 +65,7 @@ alias lsolddir="command ls -rthdl *(/Om[1,10]) .*(D/Om[1,10])"
 
 # Kubernetes aliases and completion
 if [ $commands[kubectl] ]; then
+  # Set default KUBE_NAMESPACE to "default"
   KUBE_NAMESPACE="default"
 
   #k = kubectl -n $KUBE_NAMESPACE 
@@ -77,19 +78,70 @@ if [ $commands[kubectl] ]; then
     fi
   }
 
-  alias ktailf="k logs --tail 10 -f"
+  alias kl="k get"
   alias klp="k get pods"
   alias kld="k get deploy"
   alias kls="k get services"
-  alias kpvc="k get pvc"
-  alias kpv="k get pv"
+  alias kln="k get namespaces"
+  alias klpvc="k get pvc"
+  alias klpv="k get pv"
+  alias klst="k get statefulset.apps"
+  alias klrs="k get replicaset.apps"
+  alias klcm="k get cm"
+  alias klsc="k get secrets"
   alias kla="k get all"
-  alias ke="k exec -ti"
+
+  alias ke="k edit"
+  alias ked="k edit deploy"
+  alias kes="k edit service"
+  alias kest="k edit statefulset.apps"
+  alias kers="k edit replicaset.apps"
+  alias kepvc="k edit pvc"
+  alias kepv="k edit pv"
+  alias kecm="k edit cm"
+  alias kesc="k edit secrets"
+
+  alias kd="k delete"
+  alias kdd="k delete pod"
+  alias kde="k delete deploy"
+  alias kdst="k delete statefulset.apps"
+  alias kdrs="k delete replicaset.apps"
+  alias kdpvc="k delete pvc"
+  alias kdpv="k delete pv"
+  alias kdcm="k delete cm"
+  alias kdsc="k delete secrets"
+
+  alias ktailf="k logs --tail 10 -f"
+  alias kx="k exec -ti"
 
   source <(kubectl completion zsh)
 
   kn() {
-    export KUBE_NAMESPACE=$1
+    # If no parameter given, list all namespace and show the "default" one
+    if [[ $# -eq 0 ]]; then
+      kubectl get namespaces | awk '{
+      if ($1 == "'$KUBE_NAMESPACE'") { printf "\033[32m*\033[0m %s\n", $0 }
+      else { printf "  %s\n", $0 }
+      }'
+
+    # If 1 parameter, set default namespace.
+    elif [[ $# -eq 1 ]]; then
+      # Check if it is a valid namespace
+      if ! kubectl get ns $1 -o yaml > /dev/null 2>&1; then
+        echo -e "\033[31mError:\033[0m namespace '$1' does not exist. Please, select a valid namespace:"
+        kubectl get ns -o name | sed -E 's/namespace./ * /'
+        return
+      fi
+
+      export KUBE_NAMESPACE=$1
+      echo "Set default namespace to '$1'"
+
+    # Otherwise, command not supported
+    else
+      echo "Usage:"
+      echo "  kn                Show all namespaces"
+      echo "  kn <namespace>    Ser default namespace"
+    fi
   }
 fi
 
