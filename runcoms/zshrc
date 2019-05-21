@@ -114,8 +114,6 @@ if [ $commands[kubectl] ]; then
   alias ktailf="k logs --tail 10 -f"
   alias kx="k exec -ti"
 
-  source <(kubectl completion zsh)
-
   kn() {
     # If no parameter given, list all namespace and show the "default" one
     if [[ $# -eq 0 ]]; then
@@ -143,6 +141,66 @@ if [ $commands[kubectl] ]; then
       echo "  kn <namespace>    Ser default namespace"
     fi
   }
+
+  __refresh_kubectl_completion() {
+    source <(kubectl completion zsh)
+
+    # Overwrite function __kubectl_override_flags() to support completion with
+    # namespace defined using KUBE_NAMESPACE environment variable.
+    # The function overridden add the following things:
+    #   if command used is 'k' (and not 'kubectl')
+    #   and if no namespace is provided in command line (using -n or --namespace flags)
+    #   then we use KUBE_NAMESPACE as the namespace defined
+    __kubectl_override_flags()
+    {
+        local ${__kubectl_override_flag_list[*]##*-} two_word_of of var
+        local KUBECTL_USED NS_DEFINED
+
+        KUBECTL_USED=0
+        for w in "${words[@]}"; do
+            if [[ $w = "kubectl" ]]; then
+                KUBECTL_USED=1
+            fi
+            if [ -n "${two_word_of}" ]; then
+                eval "${two_word_of##*-}=\"${two_word_of}=\${w}\""
+                two_word_of=
+                continue
+            fi
+            for of in "${__kubectl_override_flag_list[@]}"; do
+                case "${w}" in
+                    ${of}=*)
+                        eval "${of##*-}=\"${w}\""
+                        ;;
+                    ${of})
+                        two_word_of="${of}"
+                        ;;
+                esac
+            done
+        done
+
+        NS_DEFINED=0
+        for var in "${__kubectl_override_flag_list[@]##*-}"; do
+            if eval "test -n \"\$${var}\""; then
+                if [[ $var =~ ^(n|namespace)$ ]]; then
+                    $NS_DEFINED=1
+                fi
+                eval "echo \${${var}}"
+            fi
+        done
+
+        if [[ $KUBECTL_USED -eq 0 ]]; then
+            if [[ $NS_DEFINED -eq 0 ]]; then
+                if [[ -n $KUBE_NAMESPACE ]]; then
+                    echo "-n $KUBE_NAMESPACE"
+                fi
+            fi
+        fi
+    }
+
+    # Alias completion of 'k' to 'kubectl'
+    compdef k='kubectl'
+  }
+
 fi
 
 #
@@ -794,6 +852,7 @@ myrpaste() {
 
 
 START_TMUX=0
+ENABLE_KUBECTL_COMPLETION=1
 
 test -f /etc/kubernetes/admin.conf && export KUBECONFIG=/etc/kubernetes/admin.conf
 test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
@@ -805,3 +864,8 @@ if [[ $START_TMUX -eq 1 ]]; then
   start_tmux
 fi
 
+if [[ $ENABLE_KUBECTL_COMPLETION -eq 1 ]]; then
+  __refresh_kubectl_completion
+fi
+
+unset START_TMUX ENABLE_KUBECTL_COMPLETION
