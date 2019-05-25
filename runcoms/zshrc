@@ -201,6 +201,11 @@ if [ $commands[kubectl] ]; then
     compdef k='kubectl'
   }
 
+else
+  __refresh_kubectl_completion() {
+    # Nothing to do
+    true
+  }
 fi
 
 #
