@@ -78,6 +78,7 @@ if [ $commands[kubectl] ]; then
     fi
   }
 
+  # List = get
   alias kl="k get"
   alias klp="k get pods"
   alias kld="k get deploy"
@@ -90,6 +91,19 @@ if [ $commands[kubectl] ]; then
   alias klcm="k get cm"
   alias klsc="k get secrets"
   alias kla="k get all"
+
+  alias kg="k get"
+  alias kgp="k get pods"
+  alias kgd="k get deploy"
+  alias kgs="k get services"
+  alias kgn="k get namespaces"
+  alias kgpvc="k get pvc"
+  alias kgpv="k get pv"
+  alias kgst="k get statefulset.apps"
+  alias kgrs="k get replicaset.apps"
+  alias kgcm="k get cm"
+  alias kgsc="k get secrets"
+  alias kga="k get all"
 
   alias ke="k edit"
   alias ked="k edit deploy"
@@ -114,6 +128,7 @@ if [ $commands[kubectl] ]; then
   alias ktailf="k logs --tail 10 -f"
   alias kx="k exec -ti"
 
+  # Print or select a "default" namespace
   kn() {
     # If no parameter given, list all namespace and show the "default" one
     if [[ $# -eq 0 ]]; then
@@ -140,6 +155,26 @@ if [ $commands[kubectl] ]; then
       echo "  kn                Show all namespaces"
       echo "  kn <namespace>    Ser default namespace"
     fi
+  }
+
+  # Do a rolling update on a deployment
+  kroll() {
+    local kubns=$KUBE_NAMESPACE
+    local deploy
+    if [[ $# -lt 1 ]]; then
+      echo "Usage: kpatch [ -n NAMESPACE] DEPLOYMENT"
+      echo "Apply a rolling update on a deployment DEPLOYMENT"
+      return 1
+    fi
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -h|--help) echo "Usage: kpatch [ -n NAMESPACE] DEPLOYMENT" ; return 0 ;;
+        -n|--namespace) kubns=$2 ; shift 2 ;;
+        *) deploy=$1 ; shift ;;
+      esac
+    done
+
+    kubctl -n $kubns patch deployment $deploy -p '{"spec":{"template":{"metadata":{"labels":{"date":"'$(date +%s)'"}}}}}'
   }
 
   __refresh_kubectl_completion() {
@@ -372,6 +407,7 @@ list_ssh_auth_sock() {
 
 alias ssh='ssh_load_identities ; update_ssh_auth_sock ; ssh'
 
+if [ ! $commands[rssh] ]; then
 rssh() {
   if [ $# -ne 1 ]; then
     echo "Usage: rssh SERVER"
@@ -387,7 +423,9 @@ rssh() {
   SERVER=$1
   tmux new-window -n "$SERVER" "eval $CMD; ssh $SERVER"
 }
+fi
 
+if [ ! $commands[ssh_multi] ]; then
 ssh_multi() {
   if [[ -z $TUMX ]] && [[ $TERM != screen* ]]; then
     echo "Not in a tmux session"
@@ -456,8 +494,9 @@ ssh_multi() {
   tmux select-pane -t 0
   tmux set-option synchronize-panes on
 }
+fi
 
-if ! which tpaste > /dev/null 2>&1; then
+if [ ! $commands[tpaste] ]; then
 tpaste() {
   if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
     echo "Usage:
@@ -511,7 +550,7 @@ tpaste() {
 }
 fi
 
-if ! which tcopy > /dev/null 2>&1; then
+if [ ! $commands[tcopy] ]; then
 tcopy() {
 
   if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
@@ -606,6 +645,7 @@ start_tmux() {
   fi
 }
 
+if [ ! $commands[lh] ]; then
 lh() {
   if ! which llh > /dev/null 2>&1; then
     echo "llh command not found."
@@ -620,8 +660,9 @@ lh() {
   done
   echo
 }
+fi
 
-if ! which slh > /dev/null 2>&1; then
+if [ ! $commands[slh] ]; then
 slh() {
   if ! which llh > /dev/null 2>&1; then
     echo "llh command not found."
@@ -749,6 +790,7 @@ mscp() {
 
 }
 
+if [ ! $commands[delay] ]; then
 delay() {
   if [[ $# -lt 2 ]] || [[ ! $1 =~ ^[0-9]+$ ]]; then
     echo "Usage: delay MAX_TIME COMMAND"
@@ -766,15 +808,15 @@ delay() {
   eval $COMMAND
   return $?
 }
+fi
 
 set_tmux_title() {
   printf "\033k$1\033\\"
 }
 
-
-
+if [ ! $commands[rcopy] ]; then
 rcopy() {
-  if  ! which curl > /dev/null 2>&1; then
+  if ! which curl > /dev/null 2>&1; then
     echo "Error: curl not found. Please, install it."
     return 1
   fi
@@ -784,6 +826,8 @@ rcopy() {
   fi;
   if tty -s;then
     file="$1";file_name=$(basename "$file");
+    [ -n "${2}" ] &&  _max_dl="${2}" || _max_dl=1
+    [ ${_max_dl} -eq 0 ] && _max_dl=100
 
     if [ ! -e "$file" ];then
       echo "$file: No such file or directory">&2;return 1;
@@ -791,17 +835,19 @@ rcopy() {
     if [ -d "$file" ];then
       dir_name="$file_name"
       file_name="$file_name.tar.gz"
-      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
     else
-      cat "$file" | curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      cat "$file" | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
     fi;
   else
       file_name=$1
-      curl -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
   fi;
   echo ""
 }
+fi
 
+if [ ! $commands[rpaste] ]; then
 rpaste() {
   URL=$1
   if [[ ! $URL =~ ^http ]]; then
@@ -812,6 +858,7 @@ rpaste() {
 
   curl -o $filename $URL
 }
+fi
 
 myrcopy() {
   local _MYRCOPY_TOKEN
@@ -838,6 +885,8 @@ myrcopy() {
   fi;
   if tty -s;then
     file="$1";file_name=$(basename "$file");
+    [ -n "${2}" ] &&  _max_dl="${2}" || _max_dl=1
+    [ ${_max_dl} -eq 0 ] && _max_dl=100
 
     if [ ! -e "$file" ];then
       echo "$file: No such file or directory">&2;return 1;
@@ -845,13 +894,13 @@ myrcopy() {
     if [ -d "$file" ];then
       dir_name="$file_name"
       file_name="$file_name.tar.gz"
-      (tar czf - -C $file/.. $dir_name) | curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+      (tar czf - -C $file/.. $dir_name) | curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
     else
-      cat "$file" | curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+      cat "$file" | curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
     fi;
   else
       file_name=$1
-      curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: 1" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
+      curl -H "X-Transfer-Token: $_MYRCOPY_TOKEN" -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.coulmier.fr/$file_name"| tee /dev/null;
   fi;
   echo ""
 }
