@@ -869,14 +869,15 @@ myrcopy() {
   fi
 
   # Check if Transfer token is in environment variable. Otherwise, ask for it.
-  if [ -n $MYRCOPY_TOKEN ]; then
+  if [ -n "$MYRCOPY_TOKEN" ]; then
     _MYRCOPY_TOKEN=$MYRCOPY_TOKEN
   else
     echo "A token is required to push on transfer.coulmier.fr."
     echo "The token can be present in environment variable \$MYRCOPY_TOKEN, but"
     echo "this variable is currently empty. Set it to skip this next time."
-    echo "Enter token for transfer.coulmier.fr: "
+    echo -n "Enter token for transfer.coulmier.fr: "
     read -s _MYRCOPY_TOKEN 
+    echo
   fi
 
 
