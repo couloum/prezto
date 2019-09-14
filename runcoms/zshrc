@@ -158,8 +158,8 @@ if [ $commands[kubectl] ]; then
   }
 
   # Do a rolling update on a deployment
-  kroll() {
-    local kubns=$KUBE_NAMESPACE
+  kpatch() {
+    local opt_namespace
     local deploy
     if [[ $# -lt 1 ]]; then
       echo "Usage: kpatch [ -n NAMESPACE] DEPLOYMENT"
@@ -169,12 +169,13 @@ if [ $commands[kubectl] ]; then
     while [[ $# -gt 0 ]]; do
       case "$1" in
         -h|--help) echo "Usage: kpatch [ -n NAMESPACE] DEPLOYMENT" ; return 0 ;;
-        -n|--namespace) kubns=$2 ; shift 2 ;;
+        -n|--namespace) opt_namespace="-n $2" ; shift 2 ;;
+        -*) echo "Unknown argument: $1. See usage with --help." >&2; return 1 ;;
         *) deploy=$1 ; shift ;;
       esac
     done
 
-    kubctl -n $kubns patch deployment $deploy -p '{"spec":{"template":{"metadata":{"labels":{"date":"'$(date +%s)'"}}}}}'
+    k $opt_namespace patch deployment $deploy -p '{"spec":{"template":{"metadata":{"labels":{"date":"'$(date +%s)'"}}}}}'
   }
 
   __refresh_kubectl_completion() {
