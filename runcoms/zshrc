@@ -245,6 +245,11 @@ else
   }
 fi
 
+# Elastic Search aliases
+escat='curl -s http://localhost:9200/_cat/indices\?s=index'
+esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
+estpl='curl -s http://localhost:9200/_cat/templates'
+
 #
 # Key bindings
 #
