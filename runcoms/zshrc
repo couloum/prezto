@@ -116,8 +116,8 @@ if [ $commands[kubectl] ]; then
   alias kesc="k edit secrets"
 
   alias kd="k delete"
-  alias kdd="k delete pod"
-  alias kde="k delete deploy"
+  alias kdp="k delete pod"
+  alias kdd="k delete deploy"
   alias kdst="k delete statefulset.apps"
   alias kdrs="k delete replicaset.apps"
   alias kdpvc="k delete pvc"
@@ -127,6 +127,7 @@ if [ $commands[kubectl] ]; then
 
   alias ktailf="k logs --tail 10 -f"
   alias kx="k exec -ti"
+  alias kroll="k rolling update deploy"
 
   # Print or select a "default" namespace
   kn() {
