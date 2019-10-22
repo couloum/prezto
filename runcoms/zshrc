@@ -127,7 +127,7 @@ if [ $commands[kubectl] ]; then
 
   alias ktailf="k logs --tail 10 -f"
   alias kx="k exec -ti"
-  alias kroll="k rolling update deploy"
+  alias kroll="k rollout restart deploy"
 
   # Print or select a "default" namespace
   kn() {
@@ -246,9 +246,9 @@ else
 fi
 
 # Elastic Search aliases
-escat='curl -s http://localhost:9200/_cat/indices\?s=index'
-esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
-estpl='curl -s http://localhost:9200/_cat/templates'
+alias escat='curl -s http://localhost:9200/_cat/indices\?s=index'
+alias esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
+alias estpl='curl -s http://localhost:9200/_cat/templates'
 
 #
 # Key bindings
