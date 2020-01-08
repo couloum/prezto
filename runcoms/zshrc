@@ -84,7 +84,7 @@ if [ $commands[kubectl] ]; then
     FILTER=
     while [[ $# -gt 0 ]]; do
       case "$1" in
-        -*) OPTS+=($1) ;;
+        -*) OPTS+=($1 $2); shift ;;
         *)
           if [[ -z $RES ]]; then
             RES=$1
