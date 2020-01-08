@@ -78,32 +78,64 @@ if [ $commands[kubectl] ]; then
     fi
   }
 
-  # List = get
-  alias kl="k get"
-  alias klp="k get pods"
-  alias kld="k get deploy"
-  alias kls="k get services"
-  alias kln="k get namespaces"
-  alias klpvc="k get pvc"
-  alias klpv="k get pv"
-  alias klst="k get statefulset.apps"
-  alias klrs="k get replicaset.apps"
-  alias klcm="k get cm"
-  alias klsc="k get secrets"
-  alias kla="k get all"
+  kl() {
+    OPTS=()
+    RES=
+    FILTER=
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -*) OPTS+=($1) ;;
+        *)
+          if [[ -z $RES ]]; then
+            RES=$1
+          elif [[ -z $FILTER ]]; then
+            FILTER=$1
+          else
+            echo "Too many parameters. Usage: kl [OPTIONS] RESOURCE [FILTER]" >&2
+            return 1
+          fi
+          ;;
+      esac
+      shift
+    done
 
-  alias kg="k get"
-  alias kgp="k get pods"
-  alias kgd="k get deploy"
-  alias kgs="k get services"
-  alias kgn="k get namespaces"
-  alias kgpvc="k get pvc"
-  alias kgpv="k get pv"
-  alias kgst="k get statefulset.apps"
-  alias kgrs="k get replicaset.apps"
-  alias kgcm="k get cm"
-  alias kgsc="k get secrets"
-  alias kga="k get all"
+    if [[ -z $RES ]]; then
+      echo "Missing ressource. Usage: kl [OPTIONS] RESOURCE [FILTER]" >&2
+      return 1
+    fi
+
+    if [[ -z $FILTER ]]; then
+      k get "${OPTS[@]}" $RES
+    else
+      k get "${OPTS[@]}" $RES | grep -E "$FILTER"
+    fi
+  }
+
+  # List = get
+  alias klp="kl pod"
+  alias kld="kl deploy"
+  alias kls="kl services"
+  alias kln="kl namespaces"
+  alias klpvc="kl pvc"
+  alias klpv="kl pv"
+  alias klst="kl statefulset.apps"
+  alias klrs="kl replicaset.apps"
+  alias klcm="kl cm"
+  alias klsc="kl secrets"
+  alias kla="kl all"
+
+  alias kg="kl"
+  alias kgp="kl pods"
+  alias kgd="kl deploy"
+  alias kgs="kl services"
+  alias kgn="kl namespaces"
+  alias kgpvc="kl pvc"
+  alias kgpv="kl pv"
+  alias kgst="kl statefulset.apps"
+  alias kgrs="kl replicaset.apps"
+  alias kgcm="kl cm"
+  alias kgsc="kl secrets"
+  alias kga="kl all"
 
   alias ke="k edit"
   alias ked="k edit deploy"
@@ -249,6 +281,11 @@ fi
 alias escat='curl -s http://localhost:9200/_cat/indices\?s=index'
 alias esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
 alias estpl='curl -s http://localhost:9200/_cat/templates'
+esdelete() {
+  INDEX=$1
+  curl -s -X DELETE http://localhost:9200/$INDEX
+  echo
+}
 
 #
 # Key bindings
