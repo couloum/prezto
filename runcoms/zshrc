@@ -82,9 +82,15 @@ if [ $commands[kubectl] ]; then
     OPTS=()
     RES=
     FILTER=
+    IGNORE_FILTER=0
     while [[ $# -gt 0 ]]; do
       case "$1" in
-        -*) OPTS+=($1 $2); shift ;;
+        -*)
+          OPTS+=($1 $2);
+          if [[ "$1" = "-o" ]] && [[ ! "$2" =~ ^(wide|name)$ ]]; then
+            IGNORE_FILTER=1
+          fi
+          shift ;;
         *)
           if [[ -z $RES ]]; then
             RES=$1
@@ -104,10 +110,10 @@ if [ $commands[kubectl] ]; then
       return 1
     fi
 
-    if [[ -z $FILTER ]]; then
-      k get "${OPTS[@]}" $RES
+    if [[ $IGNORE_FILTER -eq 1 ]] || [[ -z $FILTER ]]; then
+      k get $RES "${OPTS[@]}" "$@"
     else
-      k get "${OPTS[@]}" $RES | grep -E "$FILTER"
+      k get $RES "${OPTS[@]}" "$@" | grep -E "$FILTER"
     fi
   }
 
