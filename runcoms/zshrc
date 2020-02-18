@@ -83,14 +83,36 @@ if [ $commands[kubectl] ]; then
     RES=
     FILTER=
     IGNORE_FILTER=0
+    USE_WATCH=0
     while [[ $# -gt 0 ]]; do
       case "$1" in
+        # -W is for using real watch command
+        -W) USE_WATCH=1 ;;
+        # The below options do not take a 2nd argument as value for parameter
+        -A|--all-namespaces|--no-headers|-R|--recursive|--show-kind|--show-labels|-w|--watch|--watch-only)
+          OPTS+=($1)
+          ;;
+        # The other options take a 2nd argument as value for parameter
+        # It can be in format '--arg val' or '--arg=val'
         -*)
-          OPTS+=($1 $2);
-          if [[ "$1" = "-o" ]] && [[ ! "$2" =~ ^(wide|name)$ ]]; then
-            IGNORE_FILTER=1
+          # Check if argument is provided in format arg=val
+          if [[ $1 =~ .=. ]]; then
+            OPTS+=($1)
+            if [[ $1 =~ ^(-o|--output)= ]]; then
+              # If output requested is not wide or name (ie: yaml, json...), do
+              # not filter with grep
+              if [[ ! $1 =~ =(wide|name)$ ]]; then
+                IGNORE_FILTER=1
+              fi
+            fi
+          else
+            OPTS+=($1 $2);
+            if [[ $1 =~ ^(-o|--output)$ ]] && [[ ! $2 =~ ^(wide|name)$ ]]; then
+              IGNORE_FILTER=1
+            fi
           fi
-          shift ;;
+          shift
+          ;;
         *)
           if [[ -z $RES ]]; then
             RES=$1
@@ -110,8 +132,12 @@ if [ $commands[kubectl] ]; then
       return 1
     fi
 
-    if [[ $IGNORE_FILTER -eq 1 ]] || [[ -z $FILTER ]]; then
+    if [[ -z $FILTER ]]; then
       k get $RES "${OPTS[@]}" "$@"
+    elif [[ $IGNORE_FILTER -eq 1 ]]; then
+      k get $RES "${OPTS[@]}" "$@" "$FILTER"
+    elif [[ $USE_WATCH -eq 1 ]]; then
+      watch "kubectl -n $KUBE_NAMESPACE get $RES ${OPTS[@]} | grep -E '$FILTER'"
     else
       k get $RES "${OPTS[@]}" "$@" | grep -E "$FILTER"
     fi
