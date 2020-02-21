@@ -313,9 +313,56 @@ fi
 alias escat='curl -s http://localhost:9200/_cat/indices\?s=index'
 alias esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
 alias estpl='curl -s http://localhost:9200/_cat/templates'
-esdelete() {
-  INDEX=$1
-  curl -s -X DELETE http://localhost:9200/$INDEX
+
+# es - Launch Elastic Search requests
+# Usage: es [METHOD] [-d 'data'] URI
+es() {
+  METHOD=GET
+  DATA=
+  _DATA=()
+  URI=
+  CONFIRM=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      GET|POST|PUT|DELETE) METHOD=$1 ; shift;;
+      -d) DATA="$2" ; shift 2 ;;
+      *) URI="$1" ; shift ;;
+    esac
+  done
+
+  if [[ $METHOD =~ ^(POST|PUT|DELETE)$ ]]; then
+    CONFIRM=1
+    echo -e "\e[1m$METHOD\e[0m http://localhost:9200/\e[1m$URI\e[0m"
+  fi
+
+  if [[ -n "$DATA" ]]; then
+    if ! which jq > /dev/null; then
+      echo "[warn] jq is not installed. Cannot check DATA integrity. Install jq to use this tool." >&2
+      return 1
+    fi
+
+    echo $DATA | jq . > /dev/null
+    if [[ $? -ne 0 ]]; then
+      echo "[error] Invalid json provided" >&2
+      return 1
+    fi
+
+    echo $DATA | jq .
+    _DATA=(-d "$DATA")
+  fi
+
+  if [[ $CONFIRM -ne 0 ]]; then
+    echo
+    echo -n "Do you confirm? (y/n) "
+    read ANSWER
+    if [[ ! $ANSWER =~ ^[Yy]([eE][sS])?$ ]]; then
+      echo "Query not executed."
+      return 1
+    fi
+  fi
+
+  curl -s -H 'Content-Type: application/json' -X${METHOD} "${_DATA[@]}" http://localhost:9200/$URI
   echo
 }
 
