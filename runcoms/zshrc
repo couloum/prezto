@@ -20,8 +20,7 @@ fi
 #
 
 # Sudo
-alias ...='sudo -s'
-alias @@='sudo -s'
+alias @@='sudo -s -E'
 
 # df on Linux only
 if [[ "$(uname -s)" == "Linux" ]]; then
@@ -1040,6 +1039,18 @@ myrpaste() {
   curl -o $filename $URL
 }
 
+try_cd_to_puppet_dir() {
+  # On a server named "*puppet*", with puppet dir present,
+  # "cd" to puppet dir if we are root and cur dir is homedir
+  if [[ -d /etc/puppetlabs/code/environments/production ]] && \
+     [[ $(hostname) =~ puppet ]] && \
+     [[ $(id -u) -eq 0 ]] && \
+     [[ "$(pwd)" == "$HOME" ]]; then
+
+    # All conditions are meet
+    cd /etc/puppetlabs/code/environments/production/
+  fi
+}
 
 
 START_TMUX=0
@@ -1058,5 +1069,7 @@ fi
 if [[ $ENABLE_KUBECTL_COMPLETION -eq 1 ]]; then
   __refresh_kubectl_completion
 fi
+
+try_cd_to_puppet_dir
 
 unset START_TMUX ENABLE_KUBECTL_COMPLETION
