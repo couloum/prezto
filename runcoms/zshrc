@@ -20,7 +20,7 @@ fi
 #
 
 # Sudo
-alias @@='sudo -s -E'
+alias @@='sudo -s'
 
 # df on Linux only
 if [[ "$(uname -s)" == "Linux" ]]; then
