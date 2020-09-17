@@ -318,6 +318,7 @@ fi
 
 # Elastic Search aliases
 alias escat='curl -s http://localhost:9200/_cat/indices\?s=index'
+alias esalias='curl -s http://localhost:9200/_cat/aliases\?s=alias'
 alias esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
 alias estpl='curl -s http://localhost:9200/_cat/templates'
 
