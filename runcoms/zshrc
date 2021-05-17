@@ -66,12 +66,14 @@ alias lsnewdir="command ls -rthdl *(/om[1,10]) .*(D/om[1,10])"
 alias lsolddir="command ls -rthdl *(/Om[1,10]) .*(D/Om[1,10])"
 
 # git-wrapper
-for i in /opt/v*/devops/tools/bin/git-wrapper; do
-  if [ -x $i ]; then
-    alias git=$i
-    break
-  fi
-done 2> /dev/null
+if [[ -d /opt ]]; then
+  for dir in /opt/*; do
+    if [[ -x $dir/devops/tools/bin/git-wrapper ]]; then
+      alias git=$i
+      break
+    fi
+  done
+fi
 
 # Kubernetes aliases and completion
 if [ $commands[kubectl] ]; then
