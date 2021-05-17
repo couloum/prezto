@@ -65,10 +65,13 @@ alias lsnewdir="command ls -rthdl *(/om[1,10]) .*(D/om[1,10])"
 # Display the ten oldest directories and ten oldest .directories
 alias lsolddir="command ls -rthdl *(/Om[1,10]) .*(D/Om[1,10])"
 
-# git-wrapper (for Vade Secure)
-if [ -x "/opt/vadesecure/devops/tools/bin/git-wrapper" ]; then
-  alias git=/opt/vadesecure/devops/tools/bin/git-wrapper
-fi
+# git-wrapper
+for i in /opt/v*/devops/tools/bin/git-wrapper; do
+  if [ -x $i ]; then
+    alias git=$i
+    break
+  fi
+done
 
 # Kubernetes aliases and completion
 if [ $commands[kubectl] ]; then
@@ -952,6 +955,11 @@ rcopy() {
     return 1
   fi
 
+  if [[ ! "$RCOPY_URL" =~ ^https:// ]]; then
+    echo "Error: you must define RCOPY_URL"
+    return 1
+  fi
+
   if [ $# -eq 0 ];then
     echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;
   fi;
@@ -966,13 +974,13 @@ rcopy() {
     if [ -d "$file" ];then
       dir_name="$file_name"
       file_name="$file_name.tar.gz"
-      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
     else
-      cat "$file" | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      cat "$file" | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
     fi;
   else
       file_name=$1
-      curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "https://transfer.internal.vadesecure.com/$file_name"| tee /dev/null;
+      curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
   fi;
   echo ""
 }
