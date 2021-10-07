@@ -32,6 +32,8 @@ alias upmyc="$HOME/.myconfig/update"
 
 # Go to puppet dir
 alias cdp="cd /etc/puppetlabs/code/environments/production"
+# Go to Kubernetes dir
+alias cdk="cd /opt/*/kubernetesapp/argocd"
 
 # Listing
 # Execute \kbd{ls -lSrah}
@@ -321,64 +323,6 @@ else
   }
 fi
 
-# Elastic Search aliases
-alias escat='curl -s http://localhost:9200/_cat/indices\?s=index'
-alias esalias='curl -s http://localhost:9200/_cat/aliases\?s=alias'
-alias esstatus='curl -s http://localhost:9200/_cluster/health\?pretty'
-alias estpl='curl -s http://localhost:9200/_cat/templates'
-
-# es - Launch Elastic Search requests
-# Usage: es [METHOD] [-d 'data'] URI
-es() {
-  METHOD=GET
-  DATA=
-  _DATA=()
-  URI=
-  CONFIRM=0
-
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      GET|POST|PUT|DELETE) METHOD=$1 ; shift;;
-      -d) DATA="$2" ; shift 2 ;;
-      *) URI="$1" ; shift ;;
-    esac
-  done
-
-  if [[ $METHOD =~ ^(POST|PUT|DELETE)$ ]]; then
-    CONFIRM=1
-    echo -e "\e[1m$METHOD\e[0m http://localhost:9200/\e[1m$URI\e[0m"
-  fi
-
-  if [[ -n "$DATA" ]]; then
-    if ! which jq > /dev/null; then
-      echo "[warn] jq is not installed. Cannot check DATA integrity. Install jq to use this tool." >&2
-      return 1
-    fi
-
-    echo $DATA | jq . > /dev/null
-    if [[ $? -ne 0 ]]; then
-      echo "[error] Invalid json provided" >&2
-      return 1
-    fi
-
-    echo $DATA | jq .
-    _DATA=(-d "$DATA")
-  fi
-
-  if [[ $CONFIRM -ne 0 ]]; then
-    echo
-    echo -n "Do you confirm? (y/n) "
-    read ANSWER
-    if [[ ! $ANSWER =~ ^[Yy]([eE][sS])?$ ]]; then
-      echo "Query not executed."
-      return 1
-    fi
-  fi
-
-  curl -s -H 'Content-Type: application/json' -X${METHOD} "${_DATA[@]}" http://localhost:9200/$URI
-  echo
-}
-
 #
 # Key bindings
 #
@@ -543,227 +487,78 @@ list_ssh_auth_sock() {
 
 alias ssh='ssh_load_identities ; update_ssh_auth_sock ; ssh'
 
+#
+# Commands from sr-tools
+#
+
 if [ ! $commands[rssh] ]; then
 rssh() {
-  if [ $# -ne 1 ]; then
-    echo "Usage: rssh SERVER"
-    echo "Open ssh session in another tmux window"
-    return 1
-  fi
-  if [[ -z $TUMX ]] && [[ $TERM != screen* ]]; then
-    echo "Not in a tmux session"
-    return 1
-  fi
-
-  CMD='export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)'
-  SERVER=$1
-  tmux new-window -n "$SERVER" "eval $CMD; ssh $SERVER"
+  echo "Please, install sr-tools package"
+  return 1
 }
 fi
 
 if [ ! $commands[ssh_multi] ]; then
 ssh_multi() {
-  if [[ -z $TUMX ]] && [[ $TERM != screen* ]]; then
-    echo "Not in a tmux session"
-    return 1
-  fi
-
-  SSH_USER=$USER
-  TMUX_OPTS=""
-
-  # Get arguments
-  OPTS=$(getopt -o hl:t: --long help,login:,title: -n "ssh_multi" -- "$@")
-  eval set -- "$OPTS"
-  while true; do
-    case "$1" in
-    -h|--help) echo 'Usage:
-   echo $SERVERS_LIST | ssh_multi [OPTIONS]
-   ssh_multi [OPTIONS] $SEVERS_LIST
-
- Options:
-   -h | --help           Show this menu
-   -l | --login LOGIN    Use a different login name
-   -t | --title TITLE    Set tmux window title
- '
-     return
-     ;;
-    -l|--login) SSH_USER=$2 ; shift 2 ;;
-    -t|--title) TMUX_TITLE=$2 ; shift 2 ;;
-    --) shift ; break ;;
-    *) echo "Internal error!" ; return ;;
-    esac
-  done
-
-  HOSTS_LIST=""
-  if read -t 0.1 line; then
-    HOSTS_LIST=$line
-    while read -t 0.1 line; do
-      HOSTS_LIST="$HOSTS_LIST $line"
-    done
-  else
-    HOSTS_LIST="$@"
-  fi
-
-  HOSTS_LIST=$(echo $HOSTS_LIST | tr '[\r\n\t ]+' ' ' | sed -E 's/(^ +| +$)//g' | sed -E 's/ +/ /g')
-
-  if [ -z "$HOSTS_LIST" ]; then
-      echo "No host was provided."
-      echo 'Usage:
-   echo $SERVERS_LIST | ssh_multi
-   ssh_multi $SEVERS_LIST'
-      return
-  fi
-
-  NB=0
-  CMD='export SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | head)'
-  IFS=$' '
-  for SERVER in $(echo $HOSTS_LIST); do
-    if [ $NB -eq 0 ]; then
-      [[ -z $TMUX_TITLE ]] && TMUX_TITLE=$SERVER
-      tmux new-window -n $TMUX_TITLE "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
-    else
-      tmux split-window -h "eval $(echo $CMD); ssh -l $SSH_USER $SERVER"
-      tmux select-layout tiled > /dev/null
-    fi
-    NB=$((NB+1))
-  done
-  tmux select-pane -t 0
-  tmux set-option synchronize-panes on
+  echo "Please, install sr-tools package"
+  return 1
 }
 fi
 
 if [ ! $commands[tpaste] ]; then
 tpaste() {
-  if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
-    echo "Usage:
-  tpaste > FILENAME
-  tpaste FILENAME
-  echo \$DATA | tpaste
-  echo \$DATA | tpaste FILENAME"
-    return 1
-  fi
-
-  if [ $# -eq 1 ]; then
-    if [ -f $1 ]; then
-      echo "File $1 already exist. Do you want to overwrite it? (y/n)"
-      read A
-      if [ "x$A" != "xy" ]; then
-        return 0
-      fi
-    fi
-    OUT=$1
-  else
-    OUT=/dev/stdout
-  fi
-
-  # Get BASE64 CMD
-  case $(uname -s) in
-    Darwin) BASE64_OPT="-D" ;;
-    *) BASE64_OPT="-d" ;;
-  esac
-
-
-  # Check if input from stdin
-  if ! read -t 0.1 LINE; then
-    echo "Paste your base64 text here and finish with single '.' on one line:"
-    LINE=""
-    TEXT=""
-    while true; do
-      read LINE
-      if [ "x$LINE" = "x." ]; then
-        break
-      fi
-      TEXT="${TEXT}${LINE}"
-    done
-  else
-    TEXT=$LINE;
-    while read -t 0.1 LINE; do
-      TEXT="${TEXT}${LINE}"
-    done
-  fi
-
-  echo $TEXT | base64 $BASE64_OPT | gunzip -c >! $OUT
+  echo "Please, install sr-tools package"
+  return 1
 }
 fi
 
 if [ ! $commands[tcopy] ]; then
 tcopy() {
-
-  if [ "x$1" = "x-h" ] || [ "x$1" = "x--help" ]; then
-    echo "Usage:
-  tcopy FILENAME
-  cat FILENAME | tcopy"
-    return 1
-  fi
-
-  # Test if we got input from stdin or a filename
-  if ! read -t 0.1 FIRST_LINE; then
-    # If no input from stdin, test if there is a filename given as argument
-    if [ $# -ne 1 ]; then
-      # If not, show usage
-      echo "Usage:
-  tcopy FILENAME
-  cat FILENAME | tcopy"
-      return 1
-    else
-      # If yes, check if file exists
-      FILE=$1
-
-      if [ ! -f $FILE ]; then
-        echo "File $FILE does not exists"
-        return 1
-      fi
-      MODE="FILENAME"
-    fi
-  else
-    MODE="STDIN"
-  fi
-
-  # Get terminal width
-  WIDTH=$(tput cols)
-  if [ $WIDTH -lt 20 ]; then
-    echo "Your terminal width is too low (<30 columns)"
-    return 1
-  fi
-
-  # Get BASE64 CMD
-  case $(uname -s) in
-    Darwin) BASE64_CMD="base64 -b$WIDTH" ; STAT_CMD="stat -f %z";;
-    *) BASE64_CMD="base64 -w$WIDTH" ; STAT_CMD="stat -c %s";;
-  esac
-
-  if [[ "$MODE" == "STDIN" ]]; then
-    # Store input in a temp file
-    TCOPY_TEMP_FILE=$(mktemp /tmp/tcopy.XXXXX)
-    echo $FIRST_LINE >> $TCOPY_TEMP_FILE
-
-    while read -t 0.1 LINE; do
-      echo $LINE >> $TCOPY_TEMP_FILE
-    done
-    FILE=$TCOPY_TEMP_FILE
-  fi
-
-  #Check size of file
-  SIZE=$(eval $STAT_CMD $FILE)
-  if [ $SIZE -gt 20000 ]; then
-    echo "Warning. File size is $SIZE bytes. Are you sure you want to copy it on terminal? (y/n)"
-    read A
-    if [ "x$A" != "xy" ]; then
-      # Remove temp file if any
-      [[ ! -z $TCOPY_TEMP_FILE ]] && [[ -f $TCOPY_TEMP_FILE ]] && rm -f $TCOPY_TEMP_FILE
-      return 0
-    fi
-  fi
-
-  CMD="cat \"$FILE\" | gzip -c | $BASE64_CMD"
-  eval $CMD
-
-  # Remove temp file if any
-  [[ ! -z $TCOPY_TEMP_FILE ]] && [[ -f $TCOPY_TEMP_FILE ]] && rm -f $TCOPY_TEMP_FILE
-
+  echo "Please, install sr-tools package"
+  return 1
 }
 fi
 
+if [ ! $commands[es] ]; then
+es() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+
+if [ ! $commands[lh] ]; then
+lh() {
+  echo "Please, install sr-tools package"
+}
+fi
+
+if [ ! $commands[slh] ]; then
+slh() {
+  echo "Please, install sr-tools package"
+}
+fi
+
+if [ ! $commands[delay] ]; then
+delay() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[rcopy] ]; then
+rcopy() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[rpaste] ]; then
+rpaste() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
 
 start_tmux() {
   TMUX_SOCK_PATH="/tmp/tmux-$(id -u)/default"
@@ -780,66 +575,6 @@ start_tmux() {
     fi
   fi
 }
-
-if [ ! $commands[lh] ]; then
-lh() {
-  if ! which llh > /dev/null 2>&1; then
-    echo "llh command not found."
-    return 1
-  fi
-
-  FILTER=$1
-  IFS=$'\r\n'
-  for line in $(llh $FILTER); do
-    SERVER=$(echo $line | awk '{print $2}')
-    echo -n "$SERVER "
-  done
-  echo
-}
-fi
-
-if [ ! $commands[slh] ]; then
-slh() {
-  if ! which llh > /dev/null 2>&1; then
-    echo "llh command not found."
-    return 1
-  fi
-
-  SSH_LOGIN=""
-  TMUX_TITLE=""
-
-  # Get arguments
-  OPTS=$(getopt -o hl:t: --long help,login:,title: -n "slh" -- "$@")
-  eval set -- "$OPTS"
-  while true; do
-    case "$1" in
-    -h|--help) echo 'Usage: slh [OPTIONS] LLH_FILTER
-
- SSH connect to multiple servers corresponding to the given `llh` filter.
-
- Options:
-   -h | --help           Show this menu
-   -l | --login LOGIN    Use a different login name
-   -t | --title TITLE    Set tmux window title
- '
-     return
-     ;;
-    -l|--login) SSH_LOGIN=$2 ; shift 2 ;;
-    -t|--title) TMUX_TITLE=$2 ; shift 2 ;;
-    --) shift ; break ;;
-    *) echo "Internal error!" ; return ;;
-    esac
-  done
-
-  FILTER=$1
-
-  [[ -z $TMUX_TITLE ]] && TMUX_TITLE=$FILTER
-  [[ ! -z $SSH_LOGIN ]] && SSH_LOGIN="-l $SSH_LOGIN"
-
-  CMD=$(echo "lh $FILTER | ssh_multi $SSH_LOGIN $TMUX_TITLE")
-  eval $CMD
-}
-fi
 
 mssh() {
   HOSTS_LIST=""
@@ -926,80 +661,9 @@ mscp() {
 
 }
 
-if [ ! $commands[delay] ]; then
-delay() {
-  if [[ $# -lt 2 ]] || [[ ! $1 =~ ^[0-9]+$ ]]; then
-    echo "Usage: delay MAX_TIME COMMAND"
-    echo "Execute a command after a random delay of maximum <MAX_TIME> seconds."
-    return 1
-  fi
-
-  DELAY=$1
-  shift
-  COMMAND="$@"
-
-  WAIT_TIME=$(($RANDOM % $DELAY))
-  echo "Your command will be executed in $WAIT_TIME seconds."
-  sleep $WAIT_TIME
-  eval $COMMAND
-  return $?
-}
-fi
-
 set_tmux_title() {
   printf "\033k$1\033\\"
 }
-
-if [ ! $commands[rcopy] ]; then
-rcopy() {
-  if ! which curl > /dev/null 2>&1; then
-    echo "Error: curl not found. Please, install it."
-    return 1
-  fi
-
-  if [[ ! "$RCOPY_URL" =~ ^https:// ]]; then
-    echo "Error: you must define RCOPY_URL"
-    return 1
-  fi
-
-  if [ $# -eq 0 ];then
-    echo "No arguments specified.\nUsage:\n transfer <file|directory>\n ... | transfer <file_name>">&2;return 1;
-  fi;
-  if tty -s;then
-    file="$1";file_name=$(basename "$file");
-    [ -n "${2}" ] &&  _max_dl="${2}" || _max_dl=1
-    [ ${_max_dl} -eq 0 ] && _max_dl=100
-
-    if [ ! -e "$file" ];then
-      echo "$file: No such file or directory">&2;return 1;
-    fi;
-    if [ -d "$file" ];then
-      dir_name="$file_name"
-      file_name="$file_name.tar.gz"
-      (tar czf - -C $file/.. $dir_name) | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
-    else
-      cat "$file" | curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
-    fi;
-  else
-      file_name=$1
-      curl -H "Max-Downloads: ${_max_dl}" -H "Max-Days: 1" --upload-file "-" "$RCOPY_URL/$file_name"| tee /dev/null;
-  fi;
-  echo ""
-}
-fi
-
-if [ ! $commands[rpaste] ]; then
-rpaste() {
-  URL=$1
-  if [[ ! $URL =~ ^http ]]; then
-    echo "Error: 1st parameter must be an URL"
-  fi
-
-  filename=$(basename $URL)
-
-  curl -o $filename $URL
-}
-fi
 
 myrcopy() {
   local _MYRCOPY_TOKEN
