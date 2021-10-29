@@ -487,79 +487,6 @@ list_ssh_auth_sock() {
 
 alias ssh='ssh_load_identities ; update_ssh_auth_sock ; ssh'
 
-#
-# Commands from sr-tools
-#
-
-if [ ! $commands[rssh] ]; then
-rssh() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[ssh_multi] ]; then
-ssh_multi() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[tpaste] ]; then
-tpaste() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[tcopy] ]; then
-tcopy() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[es] ]; then
-es() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-
-if [ ! $commands[lh] ]; then
-lh() {
-  echo "Please, install sr-tools package"
-}
-fi
-
-if [ ! $commands[slh] ]; then
-slh() {
-  echo "Please, install sr-tools package"
-}
-fi
-
-if [ ! $commands[delay] ]; then
-delay() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[rcopy] ]; then
-rcopy() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
-if [ ! $commands[rpaste] ]; then
-rpaste() {
-  echo "Please, install sr-tools package"
-  return 1
-}
-fi
-
 start_tmux() {
   TMUX_SOCK_PATH="/tmp/tmux-$(id -u)/default"
   if [ -S $TMUX_SOCK_PATH ]; then
@@ -744,6 +671,85 @@ test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell
 update_ssh_auth_sock > /dev/null 2>&1
 
 [ -f ~/.zshrc.local ] && . ~/.zshrc.local
+
+#
+# Everything after that is done after .zshrc.local file is loaded
+#
+
+
+# Commands from sr-tools
+
+
+if [ ! $commands[rssh] ]; then
+rssh() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[ssh_multi] ]; then
+ssh_multi() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[tpaste] ]; then
+tpaste() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[tcopy] ]; then
+tcopy() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[es] ]; then
+es() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+
+if [ ! $commands[lh] ]; then
+lh() {
+  echo "Please, install sr-tools package"
+}
+fi
+
+if [ ! $commands[slh] ]; then
+slh() {
+  echo "Please, install sr-tools package"
+}
+fi
+
+if [ ! $commands[delay] ]; then
+delay() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[rcopy] ]; then
+rcopy() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+if [ ! $commands[rpaste] ]; then
+rpaste() {
+  echo "Please, install sr-tools package"
+  return 1
+}
+fi
+
+# Other stuff
 
 if [[ $START_TMUX -eq 1 ]]; then
   start_tmux
