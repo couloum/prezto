@@ -749,6 +749,14 @@ rpaste() {
 }
 fi
 
+if [ ! $commands[lower] ]; then
+  alias lower='tr "A-Z" "a-z"'
+fi
+
+if [ ! $commands[upper] ]; then
+  alias upper='tr "a-z" "A-Z"'
+fi
+
 # Other stuff
 
 if [[ $START_TMUX -eq 1 ]]; then
