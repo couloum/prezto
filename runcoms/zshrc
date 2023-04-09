@@ -462,9 +462,9 @@ update_ssh_auth_sock() {
       sshauth -l $HOME/.sshagent.sock
     else
       if on_darwin; then
-        SSH_AUTH_SOCK=$(find /private/tmp/ -path "*/com.apple.launchd.*" -name "Listeners" -uid $(id -u) > /dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+        SSH_AUTH_SOCK=$(find /private/tmp/ -path "*/com.apple.launchd.*" -name "Listeners" -uid $(id -u) -maxdepth 2 2> /dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
       else
-        SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
+        SSH_AUTH_SOCK=$(find /tmp/ -path "*/ssh-*" -name "agent.*" -uid $(id -u) -maxdepth 2 2>/dev/null | xargs ls -r | tr ' ' '\n' | head -n1)
       fi
       if [[ ! -z $SSH_AUTH_SOCK ]]; then
         ln -sf $SSH_AUTH_SOCK $HOME/.sshagent.sock
